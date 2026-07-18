@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>2 Truths & a Lie — GummyGum</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg:      #111318;
+  --s1:      #181C24;
+  --s2:      #1F242F;
+  --s3:      #272D3A;
+  --amber:   #F5A623;
+  --coral:   #FF5C38;
+  --green:   #22C55E;
+  --red:     #EF4444;
+  --cream:   #F0EAD6;
+  --white:   #F4F6FA;
+  --muted:   rgba(244,246,250,0.42);
+  --border:  rgba(255,255,255,0.07);
+  --r:       14px;
+  --rsm:     8px;
+}
+html,body { height:100%; background:var(--bg); color:var(--white); font-family:'Inter',-apple-system,sans-serif; overflow:hidden; }
+.screen { display:none; flex-direction:column; height:100vh; max-width:430px; margin:0 auto; overflow:hidden; position:relative; }
+.screen.active { display:flex; }
+.scroll { flex:1; overflow-y:auto; scrollbar-width:none; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* ── SHARED ── */
+.btn { width:100%; padding:16px; border-radius:var(--r); font-size:15px; font-weight:700; border:none; cursor:pointer; font-family:inherit; transition:all .15s; }
+.btn-amber { background:var(--amber); color:#1a0f00; }
+.btn-amber:active { opacity:.88; transform:scale(.98); }
+.btn-amber:disabled { opacity:.5; cursor:default; }
+.btn-coral { background:var(--coral); color:#fff; }
+.btn-coral:active { opacity:.88; transform:scale(.98); }
+.btn-green { background:var(--green); color:#0a200f; }
+.btn-ghost { background:transparent; border:1.5px solid var(--border); color:var(--white); }
+.btn-ghost:hover { border-color:var(--amber); color:var(--amber); }
+.tag { font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); font-weight:600; }
+.badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+.badge-amber { background:rgba(245,166,35,.12); color:var(--amber); border:1px solid rgba(245,166,35,.25); }
+.badge-green { background:rgba(34,197,94,.12); color:var(--green); border:1px solid rgba(34,197,94,.25); }
+.badge-coral { background:rgba(255,92,56,.12); color:var(--coral); border:1px solid rgba(255,92,56,.25); }
+.badge-muted { background:rgba(255,255,255,.07); color:var(--muted); border:1px solid var(--border); }
+.fi { width:100%; background:var(--s1); border:1px solid var(--border); border-radius:var(--rsm); color:var(--white); font-size:15px; padding:13px 15px; outline:none; font-family:inherit; transition:border-color .15s; }
+.fi:focus { border-color:var(--amber); }
+.fi::placeholder { color:rgba(255,255,255,.2); }
+
+/* ══ HOME ══ */
+#home { justify-content:space-between; }
+.home-hero { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:52px 28px 20px; text-align:center; gap:0; }
+.home-logo { font-size:13px; font-weight:900; color:var(--amber); letter-spacing:-.3px; position:absolute; top:22px; left:24px; }
+.home-title { font-size:38px; font-weight:900; line-height:1.1; }
+.home-title .lie { color:var(--coral); }
+.home-sub { font-size:13px; color:var(--muted); margin-top:10px; line-height:1.6; max-width:280px; }
+.home-btns { padding:20px 22px 44px; display:flex; flex-direction:column; gap:10px; }
+.home-hint { font-size:12px; color:var(--muted); text-align:center; }
+
+/* join code input */
+.join-expand { display:none; flex-direction:column; gap:8px; }
+.join-expand.open { display:flex; }
+
+/* ══ LOBBY ══ */
+#lobby .lb-nav { padding:22px 22px 0; display:flex; align-items:center; justify-content:space-between; }
+.lb-code-wrap { text-align:center; padding:14px 22px 0; }
+.lb-code-label { font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); font-weight:600; }
+.lb-code { font-size:36px; font-weight:900; letter-spacing:10px; color:var(--amber); margin-top:4px; }
+.lb-code-hint { font-size:12px; color:var(--muted); margin-top:2px; }
+.lb-players { padding:14px 22px 0; }
+.player-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); animation:rowIn .3s ease; }
+@keyframes rowIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+.pr-av { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; color:#1a0f00; }
+.pr-name { flex:1; font-size:13px; font-weight:600; }
+.pr-status { font-size:12px; display:flex; align-items:center; }
+.pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--amber); display:inline-block; animation:dotPulse 1.2s ease-in-out infinite; }
+@keyframes dotPulse { 0%,100%{opacity:.25} 50%{opacity:1} }
+.lb-foot { padding:16px 22px 36px; border-top:1px solid var(--border); flex-shrink:0; display:flex; flex-direction:column; gap:8px; }
+.lb-start-hint { font-size:12px; color:var(--muted); text-align:center; margin-top:2px; }
+
+/* ══ SUBMIT ══ */
+#submit { }
+.sub-nav { padding:20px 22px 0; display:flex; align-items:center; gap:12px; }
+.sub-title { font-size:18px; font-weight:800; }
+.sub-body { padding:16px 22px 0; }
+.sub-desc { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:10px; }
+.fair-play { font-size:12px; color:var(--amber); font-style:italic; margin-bottom:18px; }
+
+/* statement card input */
+.stmt-card {
+  background:var(--cream); border-radius:var(--r);
+  padding:16px; margin-bottom:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+  position:relative; transition:box-shadow .2s;
+}
+.stmt-card.is-lie { box-shadow:0 4px 24px rgba(255,92,56,.3); }
+.stmt-num { font-size:10px; font-weight:800; color:rgba(0,0,0,.3); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
+.stmt-input {
+  width:100%; background:transparent; border:none; border-bottom:1.5px solid rgba(0,0,0,.12);
+  color:#1a1208; font-size:15px; font-weight:500; padding:6px 0 8px;
+  outline:none; font-family:inherit; resize:none; line-height:1.4;
+}
+.stmt-input::placeholder { color:rgba(0,0,0,.28); }
+.stmt-input:focus { border-bottom-color:rgba(0,0,0,.4); }
+.lie-toggle { display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer; }
+.lie-toggle-box {
+  width:20px; height:20px; border-radius:4px;
+  border:2px solid rgba(0,0,0,.2); background:transparent;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s; flex-shrink:0;
+}
+.lie-toggle.checked .lie-toggle-box { background:var(--coral); border-color:var(--coral); }
+.lie-toggle-label { font-size:12px; color:rgba(0,0,0,.5); font-weight:600; }
+.lie-toggle.checked .lie-toggle-label { color:var(--coral); }
+.sub-foot { padding:16px 22px 36px; flex-shrink:0; }
+.char-count { font-size:11px; color:var(--muted); text-align:right; margin-top:4px; }
+
+/* waiting after submit */
+.waiting-screen { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; text-align:center; gap:16px; }
+.waiting-icon { font-size:64px; animation:float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.waiting-title { font-size:22px; font-weight:800; }
+.waiting-sub { font-size:13px; color:var(--muted); line-height:1.6; }
+.waiting-players { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+.wp-chip { padding:5px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+
+/* ══ QUESTION (voting) ══ */
+#question { }
+.q-top { padding:16px 20px 0; display:flex; align-items:flex-start; justify-content:space-between; flex-shrink:0; }
+.q-round { font-size:11px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; font-weight:600; }
+.q-score { font-size:22px; font-weight:900; color:var(--amber); text-align:right; }
+.q-streak { font-size:11px; color:var(--coral); }
+
+/* timer */
+.q-timer-wrap { padding:12px 20px 0; flex-shrink:0; }
+.q-timer-track { height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+.q-timer-fill { height:100%; background:var(--coral); border-radius:2px; transition:width 1s linear, background .3s; }
+.q-timer-fill.danger { background:var(--red); }
+.q-timer-num { font-size:11px; color:var(--muted); text-align:right; margin-top:4px; }
+
+/* subject spotlight */
+.subject-card { margin:14px 20px 0; background:var(--s1); border-radius:var(--r); padding:14px 16px; display:flex; align-items:center; gap:12px; border:1px solid var(--border); flex-shrink:0; position:relative; }
+.sc-av { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; flex-shrink:0; color:#1a0f00; }
+.sc-name { font-size:16px; font-weight:800; flex:1; }
+.sc-prompt { font-size:12px; color:var(--muted); margin-top:2px; }
+.vote-count { text-align:right; }
+.vote-num { font-size:18px; font-weight:800; color:var(--amber); }
+.vote-label { font-size:10px; color:var(--muted); }
+
+/* statement voting cards */
+.stmt-cards { padding:12px 20px 24px; display:flex; flex-direction:column; gap:10px; flex:1; justify-content:center; perspective:800px; }
+.vote-card {
+  background:var(--cream); border-radius:var(--r);
+  padding:16px 18px; cursor:pointer;
+  box-shadow:0 3px 16px rgba(0,0,0,.35);
+  border:2.5px solid transparent;
+  transition:all .15s; position:relative;
+}
+.vote-card:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 6px 24px rgba(0,0,0,.4); border-color:rgba(0,0,0,.15); }
+.vote-card.selected { border-color:var(--coral); box-shadow:0 4px 20px rgba(255,92,56,.3); }
+.vote-card:disabled { cursor:default; }
+.vote-card.flipping { animation:cardFlip .6s ease; }
+@keyframes cardFlip { 0%{transform:rotateY(0deg)} 50%{transform:rotateY(90deg)} 100%{transform:rotateY(0deg)} }
+.vc-num { font-size:10px; font-weight:800; color:rgba(0,0,0,.28); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+.vc-text { font-size:14px; font-weight:500; color:#1a1208; line-height:1.5; }
+.vc-votes { display:none; position:absolute; top:12px; right:14px; font-size:11px; font-weight:700; color:rgba(0,0,0,.4); }
+
+/* reveal states */
+.vote-card.reveal-lie { background:#fff0ee; border-color:var(--coral) !important; box-shadow:0 4px 24px rgba(255,92,56,.35) !important; }
+.vote-card.reveal-lie .vc-num { color:var(--coral); }
+.vote-card.reveal-lie .vc-votes { display:block; color:var(--coral); }
+.vote-card.reveal-truth { background:#f0fff5; border-color:var(--green) !important; }
+.vote-card.reveal-truth .vc-num { color:var(--green); }
+.vote-card.reveal-truth .vc-votes { display:block; color:var(--green); }
+.lie-label { display:none; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); background:var(--coral); color:white; font-size:10px; font-weight:800; padding:3px 12px; border-radius:0 0 10px 10px; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
+.vote-card.reveal-lie .lie-label { display:block; }
+
+/* subject waiting view */
+.subject-wait { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; text-align:center; gap:14px; }
+.sw-icon { font-size:56px; animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+
+/* ══ REACTION ══ */
+#reaction { justify-content:center; align-items:center; }
+.rx-wrap { display:flex; flex-direction:column; align-items:center; text-align:center; padding:0 28px; gap:16px; width:100%; }
+.rx-title { font-size:26px; font-weight:900; line-height:1.2; }
+.rx-sub { font-size:13px; color:var(--muted); line-height:1.6; }
+.rx-score { font-size:42px; font-weight:900; color:var(--coral); animation:scoreIn .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes scoreIn { from{opacity:0;transform:scale(.5)} to{opacity:1;transform:scale(1)} }
+.rx-btns { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; width:100%; }
+.rx-btn { background:var(--s1); border:1.5px solid var(--border); border-radius:var(--r); padding:16px 8px; font-size:28px; cursor:pointer; transition:all .15s; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.rx-btn:hover { border-color:var(--amber); transform:scale(1.08); }
+.rx-btn:active { transform:scale(.92); }
+.rx-btn.picked { border-color:var(--amber); background:rgba(245,166,35,.1); }
+.rx-btn-label { font-size:10px; color:var(--muted); font-weight:600; }
+.rx-skip { font-size:13px; color:var(--muted); cursor:pointer; margin-top:4px; }
+
+/* ══ LEADERBOARD ══ */
+#leaderboard { }
+.glb-head { padding:28px 22px 12px; }
+.glb-sub { font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; font-weight:600; }
+.glb-title { font-size:24px; font-weight:900; margin-top:4px; }
+
+/* reveal summary card */
+.reveal-summary { margin:0 20px 12px; background:var(--s1); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
+.rs-header { padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+.rs-av { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0; color:#1a0f00; }
+.rs-name { font-size:14px; font-weight:700; flex:1; }
+.rs-stat { font-size:12px; color:var(--coral); font-weight:700; }
+.rs-stmts { padding:10px 16px 12px; display:flex; flex-direction:column; gap:6px; }
+.rs-stmt { font-size:12px; padding:8px 12px; border-radius:var(--rsm); line-height:1.4; }
+.rs-stmt.lie { background:rgba(255,92,56,.12); color:var(--coral); border:1px solid rgba(255,92,56,.25); }
+.rs-stmt.truth { background:rgba(34,197,94,.08); color:#22c55e; border:1px solid rgba(34,197,94,.2); }
+.rs-stmt-label { font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:2px; }
+
+.lb-list { padding:0 20px; }
+.lb-row { display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:var(--r); margin-bottom:7px; background:var(--s1); border:1px solid var(--border); animation:slideIn .3s ease; }
+@keyframes slideIn { from{opacity:0;transform:translateX(18px)} to{opacity:1;transform:translateX(0)} }
+.lb-row.me { border-color:rgba(245,166,35,.3); }
+.lb-pos { font-size:16px; font-weight:800; width:24px; text-align:center; flex-shrink:0; }
+.lb-av { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; color:#1a0f00; }
+.lb-info { flex:1; }
+.lb-name { font-size:13px; font-weight:700; }
+.lb-sub { font-size:10px; color:var(--muted); margin-top:1px; }
+.lb-pts { font-size:17px; font-weight:900; color:var(--amber); }
+.lb-foot2 { padding:14px 20px 36px; }
+.btn-next { width:100%; padding:17px; border-radius:var(--r); font-size:15px; font-weight:700; border:none; cursor:pointer; font-family:inherit; background:var(--coral); color:white; }
+
+/* ══ END ══ */
+#end { align-items:center; }
+.end-top { padding:24px 20px 0; text-align:center; width:100%; }
+.conf-wrap { width:100%; height:48px; overflow:hidden; position:relative; }
+.conf-p { position:absolute; top:0; width:7px; height:11px; border-radius:2px; animation:fall 1.2s ease-out forwards; }
+@keyframes fall { 0%{transform:translateY(-8px) rotate(0);opacity:1} 100%{transform:translateY(60px) rotate(360deg);opacity:0} }
+.end-podium { display:flex; align-items:flex-end; justify-content:center; gap:8px; padding:16px 20px 0; width:100%; }
+.ep-slot { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.ep-av { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#1a0f00; animation:dropIn .5s ease; }
+@keyframes dropIn { from{opacity:0;transform:translateY(-28px)} to{opacity:1;transform:translateY(0)} }
+.ep-name { font-size:11px; font-weight:700; text-align:center; max-width:78px; }
+.ep-block { width:78px; border-radius:6px 6px 0 0; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; }
+.ep-block.gold { height:80px; background:var(--amber); color:#1a0f00; }
+.ep-block.silver { height:60px; background:#9ca3af; color:#1a1a1a; }
+.ep-block.bronze { height:44px; background:#b87333; color:#1a1a1a; }
+.badges-row { display:flex; gap:8px; padding:16px 20px 0; width:100%; justify-content:center; flex-wrap:wrap; }
+.end-badge { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:24px; border:1px solid var(--border); background:var(--s1); font-size:12px; font-weight:700; }
+.full-res { flex:1; overflow-y:auto; padding:14px 20px; width:100%; scrollbar-width:none; }
+.full-res::-webkit-scrollbar { display:none; }
+.res-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; font-weight:600; }
+.res-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+.res-pos { width:18px; font-weight:700; color:var(--muted); font-size:12px; }
+.res-av { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:#1a0f00; }
+.res-name { flex:1; font-size:13px; font-weight:600; }
+.res-pts { font-weight:800; color:var(--amber); font-size:13px; }
+.reactions { display:flex; gap:10px; justify-content:center; padding:14px 20px 32px; width:100%; }
+.rxn { font-size:22px; background:var(--s1); border:1px solid var(--border); border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.rxn:active { transform:scale(.88); }
+
+/* ══ OVERLAYS ══ */
+.flash { position:fixed; inset:0; pointer-events:none; z-index:99; opacity:0; transition:opacity .15s; }
+.flash.green { background:rgba(34,197,94,.2); }
+.flash.red { background:rgba(239,68,68,.18); }
+.flash.show { opacity:1; }
+.toast { position:fixed; bottom:32px; left:50%; transform:translateX(-50%); background:var(--s3); color:var(--white); font-size:13px; font-weight:600; padding:10px 20px; border-radius:24px; z-index:200; opacity:0; pointer-events:none; transition:all .3s; white-space:nowrap; border:1px solid var(--border); }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
+
+/* reaction overlay on reveal — the room sees the subject's pick */
+.reaction-overlay { position:absolute; top:10px; right:14px; font-size:32px; animation:reactionPop .4s cubic-bezier(.34,1.56,.64,1); z-index:5; }
+@keyframes reactionPop { from{opacity:0;transform:scale(.3)} to{opacity:1;transform:scale(1)} }
+</style>
+</head>
+<body>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ══════════ HOME ══════════ -->
+<div class="screen active" id="home">
+  <div class="home-logo">GummyGum</div>
+  <div class="home-hero">
+    <div class="home-title">2 Truths &<br>a <span class="lie">Lie</span></div>
+    <div class="home-sub">How well do your teammates really know you?</div>
+  </div>
+  <div class="home-btns">
+    <button class="btn btn-coral" onclick="createGame()">Create a game</button>
+    <button class="btn btn-ghost" id="joinToggle" onclick="toggleJoin()">Join a game</button>
+    <div class="join-expand" id="joinExpand">
+      <input class="fi" id="joinCode" placeholder="Game code (e.g. LIE-482)" maxlength="8" style="text-align:center;letter-spacing:3px;font-weight:700;font-size:18px" />
+      <input class="fi" id="joinName" placeholder="Your display name" maxlength="20" />
+      <div style="font-size:12px;color:var(--red);min-height:18px;text-align:center" id="joinErr"></div>
+      <button class="btn btn-amber" onclick="joinGame()">Join →</button>
+    </div>
+    <div class="home-hint">Free · Up to 10 players · No account needed</div>
+  </div>
+</div>
+
+<!-- ══════════ LOBBY ══════════ -->
+<div class="screen" id="lobby">
+  <div class="lb-nav">
+    <div class="tag" id="lobbyGameTag">Waiting for players</div>
+    <div class="badge badge-amber" id="lobbyPlayerCount">1 / 10</div>
+  </div>
+  <div class="lb-code-wrap">
+    <div class="lb-code-label">Game code — share this</div>
+    <div class="lb-code" id="lobbyCode">—</div>
+    <div class="lb-code-hint">Players enter this to join</div>
+  </div>
+  <div class="scroll">
+    <div class="lb-players" id="lobbyPlayers"></div>
+    <div style="height:12px"></div>
+  </div>
+  <div class="lb-foot">
+    <button class="btn btn-amber" id="writeBtn" onclick="writeStatements()">✍️ Write my statements</button>
+    <button class="btn btn-coral" id="startBtn" onclick="attemptStart()">Start game</button>
+    <div class="lb-start-hint" id="startHint">Need at least 3 players</div>
+  </div>
+</div>
+
+<!-- ══════════ SUBMIT ══════════ -->
+<div class="screen" id="submit">
+  <div class="sub-nav">
+    <div>
+      <div class="tag">Your turn to confess</div>
+      <div class="sub-title" id="submitTitle">Write your statements</div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="sub-body">
+      <div class="sub-desc">Write 2 things that are true about you and 1 that is a lie. Mark the lie — nobody else will see which one it is until the reveal.</div>
+      <div class="fair-play">🤔 Make your lie believable — but not obvious.</div>
+
+      <div class="stmt-card" id="card0">
+        <div class="stmt-num">Statement 1</div>
+        <textarea class="stmt-input" id="stmt0" rows="2" placeholder="Tell them something true..." maxlength="120" oninput="stmtChange(0)"></textarea>
+        <div class="char-count" id="cc0">0 / 120</div>
+        <div class="lie-toggle" id="toggle0" onclick="markLie(0)">
+          <div class="lie-toggle-box" id="toggleBox0"></div>
+          <div class="lie-toggle-label">This is the lie 🤫</div>
+        </div>
+      </div>
+
+      <div class="stmt-card" id="card1">
+        <div class="stmt-num">Statement 2</div>
+        <textarea class="stmt-input" id="stmt1" rows="2" placeholder="Tell them something true..." maxlength="120" oninput="stmtChange(1)"></textarea>
+        <div class="char-count" id="cc1">0 / 120</div>
+        <div class="lie-toggle" id="toggle1" onclick="markLie(1)">
+          <div class="lie-toggle-box" id="toggleBox1"></div>
+          <div class="lie-toggle-label">This is the lie 🤫</div>
+        </div>
+      </div>
+
+      <div class="stmt-card" id="card2">
+        <div class="stmt-num">Statement 3</div>
+        <textarea class="stmt-input" id="stmt2" rows="2" placeholder="This one could be the lie..." maxlength="120" oninput="stmtChange(2)"></textarea>
+        <div class="char-count" id="cc2">0 / 120</div>
+        <div class="lie-toggle" id="toggle2" onclick="markLie(2)">
+          <div class="lie-toggle-box" id="toggleBox2"></div>
+          <div class="lie-toggle-label">This is the lie 🤫</div>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+  </div>
+  <div class="sub-foot">
+    <button class="btn btn-coral" id="submitBtn" onclick="submitStatements()">Lock in my statements</button>
+  </div>
+</div>
+
+<!-- ══════════ SUBMIT WAITING ══════════ -->
+<div class="screen" id="submit-wait">
+  <div class="waiting-screen">
+    <div class="waiting-icon">🤫</div>
+    <div class="waiting-title">You're in.</div>
+    <div class="waiting-sub">Waiting for everyone else to submit their statements...</div>
+    <div class="waiting-players" id="waitingPlayers"></div>
+    <button class="btn btn-ghost" style="margin-top:16px;width:auto;padding:12px 24px;font-size:13px" onclick="returnToLobby()">← Back to lobby</button>
+  </div>
+</div>
+
+<!-- ══════════ QUESTION (voter view) ══════════ -->
+<div class="screen" id="question">
+  <div class="q-top">
+    <div>
+      <div class="q-round" id="qRound">Round 1 of 5</div>
+    </div>
+    <div style="text-align:right">
+      <div class="q-score" id="qScore">0</div>
+      <div class="q-streak" id="qStreak" style="display:none">🔥 <span id="qStreakN">0</span> streak</div>
+    </div>
+  </div>
+
+  <div class="q-timer-wrap">
+    <div class="q-timer-track"><div class="q-timer-fill" id="timerFill" style="width:100%"></div></div>
+    <div class="q-timer-num" id="timerNum">30</div>
+  </div>
+
+  <div class="subject-card" id="subjectCard">
+    <div class="sc-av" id="subjectAv">CH</div>
+    <div>
+      <div class="sc-name" id="subjectName">Chidinma</div>
+      <div class="sc-prompt">Which one is the lie?</div>
+    </div>
+    <div class="vote-count" id="voteCountWrap">
+      <div class="vote-num" id="voteCount">0</div>
+      <div class="vote-label">voted</div>
+    </div>
+  </div>
+
+  <div class="stmt-cards" id="stmtCards">
+    <!-- populated by JS -->
+  </div>
+
+  <!-- subject waiting view (shown when it's your own round) -->
+  <div class="subject-wait" id="subjectWait" style="display:none">
+    <div class="sw-icon">👀</div>
+    <div style="font-size:22px;font-weight:800">It's your round!</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:260px">Your teammates are deciding which of your statements is the lie. You won't see how the vote is going until it's revealed.</div>
+  </div>
+</div>
+
+<!-- ══════════ REACTION ══════════ -->
+<div class="screen" id="reaction">
+  <div class="rx-wrap">
+    <div class="rx-title" id="rxTitle">They got you! 😅</div>
+    <div class="rx-sub" id="rxSub">8 out of 9 spotted your lie. How do you feel?</div>
+    <div class="rx-score" id="rxScore">+0</div>
+    <div class="rx-btns">
+      <div class="rx-btn" onclick="pickReaction(this,'😂','Dying')"><span>😂</span><span class="rx-btn-label">Dying</span></div>
+      <div class="rx-btn" onclick="pickReaction(this,'🤯','Shook')"><span>🤯</span><span class="rx-btn-label">Shook</span></div>
+      <div class="rx-btn" onclick="pickReaction(this,'😏','Unbothered')"><span>😏</span><span class="rx-btn-label">Unbothered</span></div>
+      <div class="rx-btn" onclick="pickReaction(this,'😤','Annoyed')"><span>😤</span><span class="rx-btn-label">Annoyed</span></div>
+      <div class="rx-btn" onclick="pickReaction(this,'🙈','Hiding')"><span>🙈</span><span class="rx-btn-label">Hiding</span></div>
+    </div>
+    <div class="rx-skip" onclick="skipReaction()">Skip reaction →</div>
+  </div>
+</div>
+
+<!-- ══════════ LEADERBOARD ══════════ -->
+<div class="screen" id="leaderboard">
+  <div class="glb-head">
+    <div class="glb-sub" id="lbSub">After round 1</div>
+    <div class="glb-title" id="lbTitle">That was Chidinma!</div>
+  </div>
+  <div class="scroll">
+    <div id="revealSummary"></div>
+    <div class="lb-list" id="lbList"></div>
+  </div>
+  <div class="lb-foot2">
+    <button class="btn-next" id="lbNext" onclick="nextRound()">Next round →</button>
+  </div>
+</div>
+
+<!-- ══════════ END ══════════ -->
+<div class="screen" id="end">
+  <div class="end-top"><div class="tag">Game over</div></div>
+  <div class="conf-wrap" id="confWrap"></div>
+  <div class="end-podium" id="endPodium"></div>
+  <div class="badges-row" id="badgesRow"></div>
+  <div class="full-res" id="fullRes"></div>
+  <div class="reactions">
+    <div class="rxn" onclick="rxn(this)">🔥</div>
+    <div class="rxn" onclick="rxn(this)">😂</div>
+    <div class="rxn" onclick="rxn(this)">😱</div>
+    <div class="rxn" onclick="rxn(this)">👏</div>
+    <div class="rxn" onclick="rxn(this)">👑</div>
+  </div>
+</div>
+
+<script>
+/* ═══ DATA ═══ */
+const COLORS = ['#F5A623','#3b82f6','#a855f7','#22c55e','#ef4444','#FF5C38','#14b8a6','#f43f5e','#84cc16','#0ea5e9'];
+const MIN_PLAYERS = 3;
+
+const PLAYERS = [
+  { name:'Chidinma', color:COLORS[0], score:0, streak:0, correctGuesses:0, liarPoints:0, lastReaction:null,
+    stmts:['I once accidentally called my boss "mum" in a meeting in front of 30 people.','I have never eaten suya in my life.','I learned to swim before I could ride a bicycle.'], lie:1 },
+  { name:'Emeka', color:COLORS[1], score:0, streak:0, correctGuesses:0, liarPoints:0, lastReaction:null,
+    stmts:['I own 14 identical white shirts on purpose.','I failed my driving test 4 times before passing.','I once went viral on Twitter for a thread about jollof rice.'], lie:0 },
+  { name:'Zara', color:COLORS[2], score:0, streak:0, correctGuesses:0, liarPoints:0, lastReaction:null,
+    stmts:['I once spent 3 days in an airport due to a missed connection.','I have a twin that nobody at work knows about.','I can recite the entire Lagos state map from memory.'], lie:2 },
+  { name:'Kelvin', color:COLORS[3], score:0, streak:0, correctGuesses:0, liarPoints:0, lastReaction:null,
+    stmts:['I was an extra in a Nollywood film in secondary school.','I have read the Nigerian constitution twice for fun.','I am afraid of butterflies.'], lie:1 },
+  { name:'You', color:COLORS[4], score:0, streak:0, correctGuesses:0, liarPoints:0, lastReaction:null,
+    stmts:[], lie:-1 },
+];
+
+const ME = PLAYERS[PLAYERS.length - 1];
+let mySubmitted = false;
+let myLieIdx = -1;
+let currentRound = 0;
+let roundOrder = [];
+let timeLeft = 30;
+let timerTick = null;
+let answered = false;
+let gameCode = '';
+let lobbyFillTimer = null;
+let waitRefreshTimer = null;
+let voteInterval = null;
+
+/* ═══ UTILS ═══ */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+function flashEl(col) {
+  const f = document.getElementById('flash');
+  f.className = 'flash ' + col + ' show';
+  setTimeout(() => f.classList.remove('show'), 300);
+}
+function initials(name) { return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
+function strkMult(s) { return s >= 5 ? 2.0 : s >= 3 ? 1.5 : s >= 2 ? 1.2 : 1.0; }
+function genCode() {
+  const w = ['LIE','FIB','SPY','ACE','FOX','WIT'];
+  return w[Math.floor(Math.random() * w.length)] + '-' + Math.floor(100 + Math.random() * 900);
+}
+function resetPlayers() {
+  PLAYERS.forEach(p => { p.score=0; p.streak=0; p.correctGuesses=0; p.liarPoints=0; p.lastReaction=null; p._in=false; p._submitted=false; });
+}
+
+/* ═══ HOME ═══ */
+function toggleJoin() {
+  document.getElementById('joinExpand').classList.toggle('open');
+}
+function createGame() {
+  gameCode = genCode();
+  document.getElementById('lobbyCode').textContent = gameCode;
+  resetPlayers();
+  ME.stmts = []; ME.lie = -1; mySubmitted = false;
+  buildLobby();
+  show('lobby');
+  startLobbyFill();
+}
+function joinGame() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  const name = document.getElementById('joinName').value.trim();
+  const err = document.getElementById('joinErr');
+  if (!code) { err.textContent = 'Enter a game code.'; return; }
+  if (!name) { err.textContent = 'Enter your display name.'; return; }
+  err.textContent = '';
+  ME.name = name;
+  gameCode = code;
+  document.getElementById('lobbyCode').textContent = code;
+  resetPlayers();
+  ME.stmts = []; ME.lie = -1; mySubmitted = false;
+  buildLobby();
+  show('lobby');
+  startLobbyFill();
+}
+
+/* ═══ LOBBY ═══ */
+function buildLobby() {
+  const wrap = document.getElementById('lobbyPlayers');
+  wrap.innerHTML = '';
+  const joined = PLAYERS.filter(p => p._in || p === ME);
+  joined.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `<div class="pr-av" style="background:${p.color}">${initials(p.name)}</div>
+      <div class="pr-name" style="color:${p.color}">${p.name}${p === ME ? ' (you)' : ''}</div>
+      <div class="pr-status">${p._submitted ? '✅' : '<span class="pulse-dot"></span>'}</div>`;
+    wrap.appendChild(row);
+  });
+  document.getElementById('lobbyPlayerCount').textContent = joined.length + ' / 10';
+
+  const writeBtn = document.getElementById('writeBtn');
+  if (mySubmitted) { writeBtn.textContent = '✓ Statements submitted'; writeBtn.disabled = true; }
+  else { writeBtn.textContent = '✍️ Write my statements'; writeBtn.disabled = false; }
+
+  const enoughPlayers = joined.length >= MIN_PLAYERS;
+  const allSubmitted = joined.length > 0 && joined.every(p => p._submitted);
+  const startBtn = document.getElementById('startBtn');
+  startBtn.style.opacity = (enoughPlayers && allSubmitted) ? '1' : '0.5';
+  document.getElementById('startHint').textContent = !enoughPlayers
+    ? `Need at least ${MIN_PLAYERS} players to start (${joined.length}/${MIN_PLAYERS})`
+    : !allSubmitted
+      ? 'Waiting for everyone to submit their statements...'
+      : "Everyone's ready — let's go!";
+}
+
+function startLobbyFill() {
+  clearInterval(lobbyFillTimer);
+  lobbyFillTimer = setInterval(() => {
+    const others = PLAYERS.filter(p => p !== ME && !p._in);
+    if (!others.length) { clearInterval(lobbyFillTimer); return; }
+    const bot = others[0];
+    bot._in = true;
+    buildLobby();
+    // bots submit their statements shortly after joining, independent of the host
+    setTimeout(() => { bot._submitted = true; buildLobby(); }, 1200 + Math.random() * 900);
+  }, 1600);
+}
+
+function writeStatements() {
+  if (mySubmitted) return;
+  document.getElementById('submitTitle').textContent = `Hey ${ME.name}, write your statements`;
+  [0,1,2].forEach(i => {
+    document.getElementById('stmt'+i).value = '';
+    document.getElementById('cc'+i).textContent = '0 / 120';
+    document.getElementById('toggle'+i).classList.remove('checked');
+    document.getElementById('card'+i).classList.remove('is-lie');
+  });
+  myLieIdx = -1;
+  show('submit');
+}
+
+function attemptStart() {
+  const joined = PLAYERS.filter(p => p._in || p === ME);
+  if (joined.length < MIN_PLAYERS) { showToast(`Need at least ${MIN_PLAYERS} players to start.`); return; }
+  if (!joined.every(p => p._submitted)) { showToast("Waiting for everyone to submit their statements."); return; }
+  clearInterval(lobbyFillTimer);
+  roundOrder = joined;
+  currentRound = 0;
+  showRound();
+}
+
+/* ═══ SUBMIT ═══ */
+function stmtChange(i) {
+  const val = document.getElementById('stmt'+i).value;
+  document.getElementById('cc'+i).textContent = val.length + ' / 120';
+}
+function markLie(i) {
+  [0,1,2].forEach(j => {
+    document.getElementById('toggle'+j).classList.remove('checked');
+    document.getElementById('card'+j).classList.remove('is-lie');
+  });
+  document.getElementById('toggle'+i).classList.add('checked');
+  document.getElementById('card'+i).classList.add('is-lie');
+  myLieIdx = i;
+}
+function submitStatements() {
+  const s0 = document.getElementById('stmt0').value.trim();
+  const s1 = document.getElementById('stmt1').value.trim();
+  const s2 = document.getElementById('stmt2').value.trim();
+  if (!s0 || !s1 || !s2) { showToast('Fill in all 3 statements first.'); return; }
+  if (myLieIdx === -1) { showToast('Mark which one is the lie 🤫'); return; }
+  ME.stmts = [s0, s1, s2];
+  ME.lie = myLieIdx;
+  mySubmitted = true;
+  ME._submitted = true;
+
+  buildWaiting();
+  show('submit-wait');
+  clearInterval(waitRefreshTimer);
+  waitRefreshTimer = setInterval(buildWaiting, 800);
+}
+function buildWaiting() {
+  const wrap = document.getElementById('waitingPlayers');
+  wrap.innerHTML = '';
+  PLAYERS.filter(p => p._in || p === ME).forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'wp-chip';
+    chip.style.background = p._submitted ? 'rgba(34,197,94,.12)' : 'rgba(255,255,255,.07)';
+    chip.style.color = p._submitted ? 'var(--green)' : 'var(--muted)';
+    chip.style.border = '1px solid ' + (p._submitted ? 'rgba(34,197,94,.25)' : 'var(--border)');
+    chip.textContent = (p._submitted ? '✓ ' : '') + p.name;
+    wrap.appendChild(chip);
+  });
+}
+function returnToLobby() {
+  clearInterval(waitRefreshTimer);
+  buildLobby();
+  show('lobby');
+}
+
+/* ═══ GAME ═══ */
+function showRound() {
+  if (currentRound >= roundOrder.length) { showEnd(); return; }
+  const subject = roundOrder[currentRound];
+  answered = false; timeLeft = 30;
+  const isMe = subject === ME;
+
+  document.getElementById('qRound').textContent = `Round ${currentRound + 1} of ${roundOrder.length}`;
+  document.getElementById('qScore').textContent = Math.round(ME.score);
+  const sd = document.getElementById('qStreak');
+  if (ME.streak >= 2) { sd.style.display = 'block'; document.getElementById('qStreakN').textContent = ME.streak; }
+  else sd.style.display = 'none';
+
+  document.getElementById('subjectAv').textContent = initials(subject.name);
+  document.getElementById('subjectAv').style.background = subject.color;
+  document.getElementById('subjectName').textContent = subject.name + (isMe ? ' (you)' : '');
+  document.getElementById('voteCount').textContent = '0';
+  // subjects never see live vote counts — only voters do
+  document.getElementById('voteCountWrap').style.display = isMe ? 'none' : 'block';
+
+  buildVoteCards(subject, isMe);
+
+  const cardsWrap = document.getElementById('stmtCards');
+  const subjectWait = document.getElementById('subjectWait');
+  if (isMe) { cardsWrap.style.display = 'none'; subjectWait.style.display = 'flex'; }
+  else { cardsWrap.style.display = 'flex'; subjectWait.style.display = 'none'; }
+
+  document.getElementById('timerFill').style.width = '100%';
+  document.getElementById('timerFill').classList.remove('danger');
+  document.getElementById('timerNum').textContent = '30';
+  clearInterval(timerTick);
+  timerTick = setInterval(tick, 1000);
+
+  clearInterval(voteInterval);
+  if (!isMe) {
+    const totalVoters = roundOrder.length - 1;
+    let simVotes = 0;
+    voteInterval = setInterval(() => {
+      if (simVotes >= totalVoters) { clearInterval(voteInterval); return; }
+      if (Math.random() < 0.4) { simVotes++; document.getElementById('voteCount').textContent = simVotes; }
+    }, 1000);
+  }
+
+  show('question');
+}
+
+function buildVoteCards(subject, isMe) {
+  const wrap = document.getElementById('stmtCards');
+  wrap.innerHTML = '';
+  subject.stmts.forEach((stmt, i) => {
+    const card = document.createElement('div');
+    card.className = 'vote-card';
+    card.innerHTML = `<div class="vc-num">Statement ${i + 1}</div><div class="vc-text">${stmt}</div><div class="vc-votes" id="vc-votes-${i}"></div><div class="lie-label">THE LIE</div>`;
+    if (!isMe) card.onclick = () => handleVote(i, card, subject);
+    wrap.appendChild(card);
+  });
+}
+
+function tick() {
+  timeLeft--;
+  document.getElementById('timerNum').textContent = timeLeft;
+  document.getElementById('timerFill').style.width = (timeLeft / 30 * 100) + '%';
+  if (timeLeft <= 8) document.getElementById('timerFill').classList.add('danger');
+  if (timeLeft <= 0) { clearInterval(timerTick); clearInterval(voteInterval); if (!answered) revealAnswer(-1, roundOrder[currentRound]); }
+}
+
+function handleVote(idx, card, subject) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerTick); clearInterval(voteInterval);
+  card.classList.add('selected');
+  revealAnswer(idx, subject);
+}
+
+function splitWrong(n) { const a = Math.floor(n/2); return [a, n-a]; }
+
+function buildRevealCards(subject, correctCount, wrongCount) {
+  const cards = document.querySelectorAll('#stmtCards .vote-card');
+  const [a, b] = splitWrong(wrongCount);
+  let truthSlot = 0;
+  cards.forEach((c, i) => {
+    c.disabled = true;
+    c.classList.add('flipping');
+    setTimeout(() => {
+      if (i === subject.lie) {
+        c.classList.add('reveal-lie');
+        c.querySelector('.vc-votes').textContent = correctCount + ' picked this';
+      } else {
+        c.classList.add('reveal-truth');
+        const n = truthSlot === 0 ? a : b; truthSlot++;
+        c.querySelector('.vc-votes').textContent = n + ' picked this';
+      }
+    }, 300);
+  });
+}
+
+function showRoomReaction(emoji) {
+  const holder = document.getElementById('subjectCard');
+  const el = document.createElement('div');
+  el.className = 'reaction-overlay';
+  el.textContent = emoji;
+  holder.appendChild(el);
+  setTimeout(() => el.remove(), 1400);
+}
+
+function revealAnswer(chosen, subject) {
+  clearInterval(timerTick); clearInterval(voteInterval);
+  const isMe = subject === ME;
+  const voters = roundOrder.filter(p => p !== subject);
+
+  const results = {};
+  voters.forEach(v => {
+    let correct, fast;
+    if (v === ME) { correct = chosen === subject.lie; fast = correct && timeLeft >= 20; }
+    else { correct = Math.random() < 0.55; fast = correct && Math.random() < 0.4; }
+    results[v.name] = { correct, fast };
+  });
+
+  voters.forEach(v => {
+    const r = results[v.name];
+    if (r.correct) {
+      let pts = 150;
+      if (r.fast) pts += 50;
+      pts = Math.round(pts * strkMult(v.streak));
+      v.score += pts; v.streak++; v.correctGuesses++;
+    } else {
+      v.streak = 0;
+    }
+  });
+
+  const wrongVoters = voters.filter(v => !results[v.name].correct);
+  const correctVoters = voters.filter(v => results[v.name].correct);
+  const pctWrong = voters.length ? wrongVoters.length / voters.length : 0;
+  let bonus = wrongVoters.length * 100;
+  if (voters.length > 0 && pctWrong >= 0.8) bonus += 200;
+  const perfect = voters.length > 0 && wrongVoters.length === voters.length;
+  if (perfect) bonus += 500;
+  subject.liarPoints += bonus;
+  subject.score += bonus;
+
+  if (isMe) {
+    document.getElementById('subjectWait').style.display = 'none';
+    document.getElementById('stmtCards').style.display = 'flex';
+  } else {
+    const me = results[ME.name];
+    document.getElementById('qScore').textContent = Math.round(ME.score);
+    if (me.correct) {
+      flashEl('green');
+      if (ME.streak >= 5) showToast('💥 Lie detector! Unstoppable!');
+      else if (ME.streak >= 3) showToast("🔥 You're on fire!");
+      else if (ME.streak >= 2) showToast('⚡ Streak!');
+    } else if (chosen !== -1) {
+      flashEl('red');
+    }
+  }
+
+  buildRevealCards(subject, correctVoters.length, wrongVoters.length);
+
+  setTimeout(() => {
+    if (isMe) {
+      showReactionScreen(subject, wrongVoters.length, voters.length, bonus);
+    } else {
+      const emojis = ['😂','🤯','😏','😤','🙈'];
+      subject.lastReaction = emojis[Math.floor(Math.random() * emojis.length)];
+      showRoomReaction(subject.lastReaction);
+      setTimeout(() => showLeaderboard(subject, results[ME.name].correct), 1000);
+    }
+  }, 1800);
+}
+
+/* ═══ REACTION SCREEN (subject's own round) ═══ */
+function showReactionScreen(subject, fooled, totalVoters, bonus) {
+  const gotMe = totalVoters - fooled;
+  const perfect = totalVoters > 0 && fooled === totalVoters;
+
+  document.getElementById('rxTitle').textContent = perfect ? 'Nobody caught you! 😈' : fooled > gotMe ? 'You fooled most of them! 😏' : 'They got you! 😅';
+  document.getElementById('rxSub').textContent = totalVoters > 0
+    ? `${fooled} out of ${totalVoters} players fell for the lie. ${gotMe} spotted it.`
+    : `Not enough voters this round to score.`;
+  document.getElementById('rxScore').textContent = '+' + bonus + ' pts';
+
+  document.querySelectorAll('.rx-btn').forEach(b => b.classList.remove('picked'));
+  show('reaction');
+}
+function pickReaction(el, emoji, label) {
+  document.querySelectorAll('.rx-btn').forEach(b => b.classList.remove('picked'));
+  el.classList.add('picked');
+  ME.lastReaction = emoji;
+  showToast(emoji + ' ' + label);
+  setTimeout(() => showLeaderboard(roundOrder[currentRound], false), 1200);
+}
+function skipReaction() {
+  ME.lastReaction = null;
+  showLeaderboard(roundOrder[currentRound], false);
+}
+
+/* ═══ LEADERBOARD ═══ */
+function showLeaderboard(subject, voterCorrect) {
+  show('leaderboard');
+  document.getElementById('lbSub').textContent = `After round ${currentRound + 1}`;
+  document.getElementById('lbTitle').textContent = `That was ${subject.name}!`;
+
+  const rs = document.getElementById('revealSummary');
+  rs.innerHTML = `<div class="reveal-summary">
+    <div class="rs-header">
+      <div class="rs-av" style="background:${subject.color}">${initials(subject.name)}</div>
+      <div class="rs-name">${subject.name}'s statements ${subject.lastReaction ? `<span style="margin-left:4px">${subject.lastReaction}</span>` : ''}</div>
+      <div class="rs-stat">${subject === ME ? 'Your round' : (voterCorrect ? '✓ You got it' : '✗ You missed it')}</div>
+    </div>
+    <div class="rs-stmts">
+      ${subject.stmts.map((s, i) => `<div class="rs-stmt ${i === subject.lie ? 'lie' : 'truth'}">
+        <div class="rs-stmt-label">${i === subject.lie ? '🔴 The lie' : '🟢 Truth'}</div>${s}
+      </div>`).join('')}
+    </div>
+  </div>`;
+
+  const all = [...roundOrder].sort((a, b) => b.score - a.score);
+  const list = document.getElementById('lbList');
+  list.innerHTML = '';
+  const medals = ['🥇', '🥈', '🥉'];
+  all.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (p === ME ? ' me' : '');
+    row.innerHTML = `<div class="lb-pos">${medals[i] || (i + 1)}</div>
+      <div class="lb-av" style="background:${p.color}">${initials(p.name)}</div>
+      <div class="lb-info"><div class="lb-name" style="color:${p.color}">${p.name}${p === ME ? ' (you)' : ''}</div>
+      ${p.streak >= 3 ? `<div class="lb-sub" style="color:var(--coral)">🔥 ${p.streak} streak</div>` : ''}</div>
+      <div class="lb-pts">${Math.round(p.score)}</div>`;
+    list.appendChild(row);
+  });
+
+  const isLast = currentRound >= roundOrder.length - 1;
+  const btn = document.getElementById('lbNext');
+  btn.textContent = isLast ? 'See final results 🏆' : 'Next round →';
+  btn.onclick = () => { currentRound++; isLast ? showEnd() : showRound(); };
+}
+function nextRound() { currentRound++; showRound(); }
+
+/* ═══ END ═══ */
+function showEnd() {
+  show('end');
+  spawnConf();
+  const all = [...roundOrder].sort((a, b) => b.score - a.score);
+
+  const podium = document.getElementById('endPodium');
+  podium.innerHTML = '';
+  [[all[1],'silver','🥈'],[all[0],'gold','🥇'],[all[2],'bronze','🥉']].forEach(([p, cls, m], i) => {
+    if (!p) return;
+    const s = document.createElement('div'); s.className = 'ep-slot';
+    s.innerHTML = `<div class="ep-av" style="background:${p.color};animation-delay:${i*.2}s">${initials(p.name)}</div>
+      <div class="ep-name">${p.name}</div>
+      <div class="ep-block ${cls}">${m}</div>`;
+    podium.appendChild(s);
+  });
+
+  const bestLiar = [...roundOrder].sort((a, b) => b.liarPoints - a.liarPoints)[0];
+  const lieDetector = [...roundOrder].sort((a, b) => b.correctGuesses - a.correctGuesses)[0];
+  document.getElementById('badgesRow').innerHTML = `
+    <div class="end-badge">😈 Best Liar: <span style="color:var(--coral);margin-left:4px">${bestLiar.name}</span></div>
+    <div class="end-badge">🕵️ Lie Detector: <span style="color:var(--green);margin-left:4px">${lieDetector.name}</span></div>`;
+
+  const fr = document.getElementById('fullRes');
+  fr.innerHTML = '<div class="res-label">Final standings</div>';
+  all.forEach((p, i) => {
+    const row = document.createElement('div'); row.className = 'res-row';
+    row.innerHTML = `<div class="res-pos">${i + 1}</div>
+      <div class="res-av" style="background:${p.color}">${initials(p.name)}</div>
+      <div class="res-name" style="color:${p.color}">${p.name}</div>
+      <div class="res-pts">${Math.round(p.score)}</div>`;
+    fr.appendChild(row);
+  });
+}
+
+function spawnConf() {
+  const w = document.getElementById('confWrap'); w.innerHTML = '';
+  const cols = [COLORS[0], COLORS[1], COLORS[2], COLORS[3], COLORS[4]];
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div'); p.className = 'conf-p';
+    p.style.cssText = `left:${Math.random()*100}%;background:${cols[i%5]};animation-delay:${Math.random()*.8}s;animation-duration:${.8+Math.random()*.6}s`;
+    w.appendChild(p);
+  }
+}
+
+function rxn(el) { el.style.transform = 'scale(1.3)'; setTimeout(() => el.style.transform = '', 200); }
+</script>
+</body>
+</html>
