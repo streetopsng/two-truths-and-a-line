@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
 
 export const ReactionScreen = () => {
@@ -19,14 +19,21 @@ export const ReactionScreen = () => {
     ? `${fooled} out of ${totalVoters} players fell for the lie. ${gotMe} spotted it.`
     : `Not enough voters this round to score.`;
 
+  // Host auto-advances when the subject's reaction is recorded
+  useEffect(() => {
+    if (isHost && subject?.lastReaction) {
+      const timer = setTimeout(() => {
+        updateGameDoc({ status: 'leaderboard' });
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isHost, subject?.lastReaction, updateGameDoc]);
+
   const handlePick = async (emoji) => {
     setPicked(emoji);
     await updateGameDoc({
       [`players.${currentUser.uid}.lastReaction`]: emoji
     });
-    setTimeout(() => {
-      if (isHost) updateGameDoc({ status: 'leaderboard' });
-    }, 1200);
   };
 
   const skipReaction = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
@@ -13,6 +13,14 @@ export const QuestionScreen = () => {
   const isHost = currentUser?.uid === hostUid;
   
   const [timeLeft, setTimeLeft] = useState(30);
+  const hasRevealedRef = useRef(false);
+
+  // Reset ref when we move to a new round
+  useEffect(() => {
+    if (!revealed) {
+      hasRevealedRef.current = false;
+    }
+  }, [revealed]);
 
   // Sync Timer
   useEffect(() => {
@@ -24,27 +32,26 @@ export const QuestionScreen = () => {
     
     setTimeLeft(calcTime());
     const timer = setInterval(() => {
-      const t = calcTime();
-      setTimeLeft(t);
-      if (t === 0 && !revealed && isHost) {
-        // Time is up, host triggers reveal
-        handleReveal();
-      }
+      setTimeLeft(calcTime());
     }, 500);
     
     return () => clearInterval(timer);
-  }, [roundEndTime, revealed, isHost]);
+  }, [roundEndTime]);
 
-  // Check if everyone voted
+  // Trigger reveal when time is up or everyone voted
   useEffect(() => {
-    if (isHost && !revealed) {
-      const numVoters = Object.keys(players || {}).length - 1; // excluding subject
-      const votesCast = Object.keys(votes || {}).length;
-      if (numVoters > 0 && votesCast >= numVoters) {
-        handleReveal();
-      }
+    if (!isHost || revealed || hasRevealedRef.current) return;
+    
+    const numVoters = Object.keys(players || {}).length - 1; // excluding subject
+    const votesCast = Object.keys(votes || {}).length;
+    const allVoted = numVoters > 0 && votesCast >= numVoters;
+
+    if (timeLeft === 0 || allVoted) {
+      hasRevealedRef.current = true;
+      handleReveal();
     }
-  }, [votes, revealed, players, isHost]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, votes, players, isHost, revealed]);
 
   const handleVote = async (idx) => {
     if (revealed || isMe) return;
