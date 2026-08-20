@@ -18,12 +18,15 @@ export const GameProvider = ({ children }) => {
   const [gameCode, setGameCode] = useState(localStorage.getItem('gameCode') || '');
   const [gameState, setGameState] = useState({ status: 'home' });
   const [ggSession, setGgSession] = useState(null);
+  const [ggChecked, setGgChecked] = useState(false);
   const ggReportedRef = useRef(false);
 
   // 0. Resolve GummyGum hub launch identity (?ggt=...), if present.
-  // Never blocks or degrades gameplay: resolves to null on any failure.
   useEffect(() => {
-    resolveGummyGumLaunch().then(setGgSession);
+    resolveGummyGumLaunch().then((session) => {
+      setGgSession(session);
+      setGgChecked(true);
+    });
   }, []);
 
   // 1. Listen to Auth State (or mock it)
@@ -303,6 +306,7 @@ export const GameProvider = ({ children }) => {
       gameState,
       currentUser,
       ggSession,
+      ggChecked,
       createGame,
       joinGame,
       leaveGame,

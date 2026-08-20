@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
+import { Button } from './components/ui/Button';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { LobbyScreen } from './components/screens/LobbyScreen';
 import { SubmitScreen } from './components/screens/SubmitScreen';
@@ -11,9 +12,21 @@ import { EndScreen } from './components/screens/EndScreen';
 
 import { DesktopSidebar } from './components/layout/DesktopSidebar';
 
+const GummyGumLockedScreen = () => (
+  <div className="h-screen w-full bg-[#0a0b10] text-white font-inter flex items-center justify-center px-6">
+    <div className="max-w-sm w-full text-center space-y-4">
+      <h1 className="text-xl font-bold">This experience is only available through GummyGum</h1>
+      <p className="text-muted text-sm">Open it from the GummyGum hub to play.</p>
+      <a href="https://gummygum.app">
+        <Button variant="amber">Go to GummyGum</Button>
+      </a>
+    </div>
+  </div>
+);
+
 const GameCoordinator = () => {
-  const { gameState } = useGame();
-  
+  const { gameState, ggSession, ggChecked } = useGame();
+
   // Use local state for screens that don't affect all players (like writing statements)
   const [localScreen, setLocalScreen] = useState(null);
 
@@ -23,6 +36,14 @@ const GameCoordinator = () => {
   }, [gameState.status]);
 
   const activeScreen = localScreen || gameState.status;
+
+  if (!ggChecked) {
+    return <div className="h-screen w-full bg-[#0a0b10]" />;
+  }
+
+  if (!ggSession) {
+    return <GummyGumLockedScreen />;
+  }
 
   const renderScreen = () => {
     switch (activeScreen) {
