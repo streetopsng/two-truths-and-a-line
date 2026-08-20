@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { db, auth } from '../firebase/config';
 import { doc, onSnapshot, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { resolveGummyGumLaunch, reportGummyGumResult } from '../lib/gummygumSession';
 
 const GameContext = createContext();
 
@@ -16,6 +17,14 @@ export const GameProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [gameCode, setGameCode] = useState(localStorage.getItem('gameCode') || '');
   const [gameState, setGameState] = useState({ status: 'home' });
+  const [ggSession, setGgSession] = useState(null);
+  const ggReportedRef = useRef(false);
+
+  // 0. Resolve GummyGum hub launch identity (?ggt=...), if present.
+  // Never blocks or degrades gameplay: resolves to null on any failure.
+  useEffect(() => {
+    resolveGummyGumLaunch().then(setGgSession);
+  }, []);
 
   // 1. Listen to Auth State (or mock it)
   useEffect(() => {
@@ -53,6 +62,44 @@ export const GameProvider = ({ children }) => {
 
     return unsub;
   }, [currentUser, gameCode]);
+
+  // 3. Report the launching host's final result back to the GummyGum hub
+  // once their game reaches its real conclusion. Fires at most once per
+  // session, and only for the host (the player who came from the hub
+  // redirect) — other players never carry a launch session.
+  useEffect(() => {
+    if (ggReportedRef.current) return;
+    if (gameState.status !== 'end') return;
+    if (!currentUser || !gameState.hostUid || currentUser.uid !== gameState.hostUid) return;
+
+    ggReportedRef.current = true;
+
+    try {
+      const players = gameState.players || {};
+      const ranked = Object.entries(players)
+        .map(([uid, p]) => ({ uid, ...p }))
+        .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+      const hostPlayer = players[currentUser.uid];
+      const placement = ranked.findIndex((p) => p.uid === currentUser.uid) + 1;
+      const bestLiar = [...ranked].sort((a, b) => (b.liarPoints || 0) - (a.liarPoints || 0))[0];
+      const lieDetector = [...ranked].sort((a, b) => (b.correctGuesses || 0) - (a.correctGuesses || 0))[0];
+
+      reportGummyGumResult({
+        gameCode: gameState.gameCode,
+        finalScore: hostPlayer?.score ?? 0,
+        placement: placement || null,
+        totalPlayers: ranked.length,
+        correctGuesses: hostPlayer?.correctGuesses ?? 0,
+        liarPoints: hostPlayer?.liarPoints ?? 0,
+        bestLiarName: bestLiar?.name ?? null,
+        lieDetectorName: lieDetector?.name ?? null,
+        leaderboard: ranked.map((p) => ({ name: p.name, score: p.score ?? 0 })),
+      });
+    } catch (err) {
+      console.error('GummyGum result report failed to build', err);
+    }
+  }, [gameState.status, gameState.hostUid, gameState.players, gameState.gameCode, currentUser]);
 
   // Mock Helper for Local State mutation
   const applyMockUpdates = (data) => {
@@ -255,6 +302,7 @@ export const GameProvider = ({ children }) => {
     <GameContext.Provider value={{
       gameState,
       currentUser,
+      ggSession,
       createGame,
       joinGame,
       leaveGame,
