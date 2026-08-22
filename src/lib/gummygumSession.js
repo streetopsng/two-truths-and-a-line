@@ -28,6 +28,8 @@ export async function resolveGummyGumLaunch() {
       isGuest: body.data.isGuest,
       player: body.data.player,
       reportToken: body.data.reportToken,
+      roomCode: body.data.roomCode || null,
+      isHost: Boolean(body.data.isHost),
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 

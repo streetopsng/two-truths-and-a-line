@@ -125,7 +125,7 @@ export const GameProvider = ({ children }) => {
   };
 
   // Actions
-  const createGame = async (playerName) => {
+  const createGame = async (playerName, presetCode) => {
     if (MOCK_MODE) {
       const code = 'TEST12';
       const mockGame = {
@@ -148,7 +148,23 @@ export const GameProvider = ({ children }) => {
     }
 
     if (!currentUser) throw new Error("Connecting to server... If this persists, check Firebase config.");
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    if (presetCode) {
+      const existingSnap = await getDoc(doc(db, 'games', presetCode));
+      if (existingSnap.exists()) {
+        const data = existingSnap.data();
+        if (!data.players[currentUser.uid]) {
+          await updateDoc(doc(db, 'games', presetCode), {
+            [`players.${currentUser.uid}`]: { name: playerName, color: COLORS[0], score: 0, streak: 0, correctGuesses: 0, liarPoints: 0, submitted: false, statements: [], lieIndex: -1, lastReaction: null }
+          });
+        }
+        localStorage.setItem('gameCode', presetCode);
+        setGameCode(presetCode);
+        return;
+      }
+    }
+
+    const code = presetCode || Math.random().toString(36).substring(2, 8).toUpperCase();
     const newGame = {
       status: 'lobby',
       gameCode: code,

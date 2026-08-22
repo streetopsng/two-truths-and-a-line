@@ -25,15 +25,27 @@ const GummyGumLockedScreen = () => (
 );
 
 const GameCoordinator = () => {
-  const { gameState, ggSession, ggChecked } = useGame();
+  const { gameState, ggSession, ggChecked, createGame, joinGame } = useGame();
 
   // Use local state for screens that don't affect all players (like writing statements)
   const [localScreen, setLocalScreen] = useState(null);
+  const routedRef = React.useRef(false);
 
   // Sync local screen clearance when global status changes
   useEffect(() => {
     setLocalScreen(null);
   }, [gameState.status]);
+
+  useEffect(() => {
+    if (!ggSession || !ggSession.roomCode || routedRef.current) return;
+    routedRef.current = true;
+    const name = ggSession.player?.name || 'Guest';
+    if (ggSession.isHost) {
+      createGame(name, ggSession.roomCode).catch((err) => console.error('GummyGum auto-create failed', err));
+    } else {
+      joinGame(ggSession.roomCode, name).catch((err) => console.error('GummyGum auto-join failed', err));
+    }
+  }, [ggSession, createGame, joinGame]);
 
   const activeScreen = localScreen || gameState.status;
 
@@ -43,6 +55,10 @@ const GameCoordinator = () => {
 
   if (!ggSession) {
     return <GummyGumLockedScreen />;
+  }
+
+  if (ggSession.roomCode && activeScreen === 'home') {
+    return <div className="h-screen w-full bg-[#0a0b10]" />;
   }
 
   const renderScreen = () => {
