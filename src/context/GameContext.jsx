@@ -150,6 +150,7 @@ export const GameProvider = ({ children }) => {
     if (!currentUser) throw new Error("Connecting to server... If this persists, check Firebase config.");
 
     if (presetCode) {
+      // Also what makes GummyGum's room pre-creation work: if GummyGum already created this room, join it instead of showing setup.
       const existingSnap = await getDoc(doc(db, 'games', presetCode));
       if (existingSnap.exists()) {
         const data = existingSnap.data();
