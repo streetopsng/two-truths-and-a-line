@@ -96,7 +96,7 @@ export const EndScreen = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 md:p-10 w-full mt-2 relative z-10 flex justify-center">
+      <div className="flex-1 overflow-y-auto min-h-0 p-6 md:p-10 w-full mt-2 relative z-10 flex justify-center">
         <div className="bg-white/[0.03] border border-white/10 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] w-full md:max-w-3xl">
           <div className="text-[10px] md:text-[14px] tracking-[3px] md:tracking-[5px] uppercase text-white/50 mb-4 md:mb-6 font-bold text-center">
             Final standings
