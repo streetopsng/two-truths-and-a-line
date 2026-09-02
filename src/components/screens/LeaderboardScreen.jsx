@@ -4,16 +4,20 @@ import { PlayerAvatar } from '../ui/PlayerAvatar';
 
 export const LeaderboardScreen = () => {
   const { gameState, currentUser, updateGameDoc } = useGame();
-  const { currentRound, roundOrder, players, hostUid, votes } = gameState;
+  const { currentRound, roundOrder, players, hostUid, votes, fooled, totalVoters } = gameState;
 
-  const subjectUid = roundOrder?.[currentRound];
+  // Each round entry is { uid, setIndex } — one entry per statement set.
+  const roundEntry = roundOrder?.[currentRound];
+  const subjectUid = roundEntry?.uid;
+  const setIndex = roundEntry?.setIndex ?? 0;
   const subject = players?.[subjectUid];
+  const activeSet = subject?.statementSets?.[setIndex];
   const isMe = subjectUid === currentUser?.uid;
   const isHost = currentUser?.uid === hostUid;
   
   // Did current user guess correctly?
   const myVote = votes?.[currentUser?.uid];
-  const voterCorrect = myVote === subject?.lieIndex;
+  const voterCorrect = myVote === activeSet?.lieIndex;
 
   const allPlayers = Object.values(players || {}).sort((a, b) => (b.score || 0) - (a.score || 0));
   const isLast = currentRound >= (roundOrder?.length || 1) - 1;
@@ -32,7 +36,7 @@ export const LeaderboardScreen = () => {
     }
   };
 
-  if (!subject) return null;
+  if (!subject || !activeSet) return null;
 
   return (
     <div className="flex flex-col h-full max-w-[430px] md:max-w-none w-full mx-auto relative z-10 md:justify-center md:items-center">
@@ -42,10 +46,11 @@ export const LeaderboardScreen = () => {
         </div>
         <div className="text-[28px] md:text-[42px] font-black mt-1 tracking-tight">
           That was <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber to-orange-400">{subject.name}</span>!
+          {setIndex > 0 && <span className="text-white/40 text-[15px] md:text-[24px] ml-2 font-bold">· set {setIndex + 1}</span>}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto md:w-full md:max-w-5xl md:flex-none">
+      <div className="flex-1 overflow-y-auto min-h-0 md:w-full md:max-w-5xl">
         <div className="flex flex-col md:flex-row md:gap-8">
           <div className="mx-6 md:mx-0 mb-5 md:mb-0 bg-white/[0.03] border border-white/10 backdrop-blur-md rounded-xl overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:flex-1 h-fit">
             <div className="p-3.5 md:p-5 px-5 md:px-6 flex items-center gap-3 md:gap-4 border-b border-white/5 bg-black/20">
@@ -54,13 +59,17 @@ export const LeaderboardScreen = () => {
                 {subject.name}'s statements {subject.lastReaction && <span className="ml-1 text-[16px] md:text-[20px]">{subject.lastReaction}</span>}
               </div>
               <div className="text-xs md:text-[14px] text-amber font-bold tracking-wide">
-                {isMe ? 'Your round' : (voterCorrect ? '✓ You got it' : '✗ You missed it')}
+                {isMe
+                  ? 'Your round'
+                  : isHost
+                    ? (totalVoters > 0 ? `🤫 ${fooled ?? 0} of ${totalVoters} fell for it` : 'Host view')
+                    : (voterCorrect ? '✓ You got it' : '✗ You missed it')}
               </div>
             </div>
             
             <div className="p-3 md:p-6 px-5 md:px-6 pb-4 flex flex-col gap-2 md:gap-4">
-              {subject.statements.map((stmt, i) => {
-                const isLie = i === subject.lieIndex;
+              {activeSet.statements.map((stmt, i) => {
+                const isLie = i === activeSet.lieIndex;
                 return (
                   <div 
                     key={i} 
