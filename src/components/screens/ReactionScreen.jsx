@@ -6,7 +6,7 @@ export const ReactionScreen = () => {
   const { currentRound, roundOrder, players, roundBonus, totalVoters, fooled, hostUid } = gameState;
   const [picked, setPicked] = useState(null);
 
-  const subjectUid = roundOrder?.[currentRound];
+  const subjectUid = roundOrder?.[currentRound]?.uid;
   const subject = players?.[subjectUid];
   const isMe = subjectUid === currentUser?.uid;
   const isHost = currentUser?.uid === hostUid;
@@ -54,6 +54,9 @@ export const ReactionScreen = () => {
       <div className="flex flex-col h-full max-w-[430px] mx-auto justify-center items-center">
         <div className="text-4xl animate-bounce mb-4">{subject?.lastReaction || '⏳'}</div>
         <div className="text-lg font-bold">Waiting for {subject?.name}'s reaction...</div>
+        <div className="text-[13px] text-muted mt-1 font-medium">
+          {subject?.name} banked <span className="text-coral font-bold">+{roundBonus || 0} pts</span> for this round
+        </div>
         {isHost && (
           <button 
             onClick={skipReaction}

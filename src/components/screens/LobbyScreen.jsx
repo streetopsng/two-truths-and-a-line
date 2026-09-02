@@ -1,12 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../../context/GameContext';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
-export const LobbyScreen = ({ onWrite }) => {
+export const LobbyScreen = () => {
   const { gameState, currentUser, startGame } = useGame();
+  const navigate = useNavigate();
+  const [error, setError] = useState('');
   const { gameCode, players, hostUid } = gameState;
+
+  const handleStart = async () => {
+    setError('');
+    try {
+      await startGame();
+    } catch (err) {
+      // Raw Firebase error — log it and show it as-is.
+      console.error('Start game failed:', err);
+      setError(err?.code ? `${err.code}: ${err.message}` : String(err?.message || err));
+    }
+  };
   
   const playersList = Object.values(players || {});
   const isHost = currentUser?.uid === hostUid;
@@ -57,39 +71,51 @@ export const LobbyScreen = ({ onWrite }) => {
       </div>
 
       <div className="hidden md:flex flex-1 flex-col items-center justify-center p-8 text-center gap-6">
-        <div className="text-[80px] animate-float drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">🎮</div>
-        <h2 className="text-[42px] font-black tracking-tight">You're in the Lobby</h2>
+        <div className="text-[80px] animate-float drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">{isHost ? '🎬' : '🎮'}</div>
+        <h2 className="text-[42px] font-black tracking-tight">{isHost ? "You're hosting" : "You're in the Lobby"}</h2>
         <p className="text-[16px] text-white/60 font-medium max-w-md leading-relaxed">
-          The game code is in the sidebar. Once everyone has joined and submitted their statements, the host can start the game.
+          {isHost
+            ? "You set the game up and run the show — but you don't play. Once it starts, watch each round live: who votes for what, and every point scored."
+            : 'The game code is in the sidebar. Once everyone has joined and submitted their statements, the host can start the game.'}
         </p>
       </div>
 
       <div className="p-6 bg-black/20 backdrop-blur-xl border-t border-white/10 flex flex-col md:flex-row md:items-center justify-center gap-4 shrink-0 md:rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:mx-6 md:mb-6 md:border md:bg-white/[0.02]">
-        <div className="w-full md:w-[300px]">
-          <Button 
-            variant="amber" 
-            onClick={onWrite}
-            disabled={me?.submitted}
-          >
-            {me?.submitted ? '✓ Statements submitted' : '✍️ Write my statements'}
-          </Button>
-        </div>
+        {!isHost && (
+          <div className="w-full md:w-[300px]">
+            <Button
+              variant="amber"
+              onClick={() => navigate('/submit')}
+              disabled={me?.submitted}
+            >
+              {me?.submitted ? '✓ Statements submitted' : '✍️ Write my statements'}
+            </Button>
+          </div>
+        )}
         {isHost && (
           <div className="w-full md:w-[300px]">
-            <Button 
-              variant="coral" 
-              onClick={startGame}
+            {error && (
+              <div className="text-[11px] text-red bg-red/10 border border-red/25 rounded-lg px-3 py-2 mb-2 text-center leading-snug break-words">
+                {error}
+              </div>
+            )}
+            <Button
+              variant="coral"
+              onClick={handleStart}
               disabled={!hasEnoughPlayers || !allSubmitted}
               className={(!hasEnoughPlayers || !allSubmitted) ? 'opacity-50 grayscale' : ''}
             >
               Start game
             </Button>
             <div className="text-[11px] text-white/40 text-center mt-2 font-medium tracking-wide">
-              {!hasEnoughPlayers 
-                ? `Need at least ${MIN_PLAYERS} players` 
+              {!hasEnoughPlayers
+                ? `Need at least ${MIN_PLAYERS} players`
                 : !allSubmitted
                   ? 'Waiting for everyone to submit...'
                   : "Everyone's ready — let's go!"}
+            </div>
+            <div className="text-[10px] text-white/30 text-center mt-1 font-medium tracking-wide">
+              Hosts don't play — you watch every round and control the flow.
             </div>
           </div>
         )}

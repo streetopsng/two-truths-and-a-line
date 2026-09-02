@@ -3,7 +3,7 @@ import { useGame } from '../../context/GameContext';
 import { Button } from '../ui/Button';
 
 export const HomeScreen = () => {
-  const { createGame, joinGame } = useGame();
+  const { createGame, joinGame, authReady, authError } = useGame();
   const [showJoin, setShowJoin] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joinName, setJoinName] = useState('');
@@ -13,6 +13,7 @@ export const HomeScreen = () => {
     try {
       await createGame("Host"); // Prompting for name could be added
     } catch (err) {
+      console.error("Create game failed:", err);
       setError(err.message);
     }
   };
@@ -30,6 +31,7 @@ export const HomeScreen = () => {
     try {
       await joinGame(joinCode.toUpperCase(), joinName);
     } catch (err) {
+      console.error("Join game failed:", err);
       setError(err.message);
     }
   };
@@ -103,8 +105,12 @@ export const HomeScreen = () => {
           <div className="w-full max-w-[500px] mx-auto flex flex-col gap-4 pb-6 md:pb-12 relative z-20">
             <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-3 md:gap-4 w-full">
               <div className="w-full">
-                <Button onClick={handleCreate} className="shadow-[0_4px_20px_rgba(255,255,255,0.05)] w-full">
-                  Create a game
+                <Button
+                  onClick={handleCreate}
+                  disabled={!authReady}
+                  className={`shadow-[0_4px_20px_rgba(255,255,255,0.05)] w-full ${!authReady ? 'opacity-50' : ''}`}
+                >
+                  {authReady ? 'Create a game' : 'Connecting…'}
                 </Button>
               </div>
               <div className="w-full">
@@ -117,6 +123,12 @@ export const HomeScreen = () => {
             {error && (
               <div className="text-xs md:text-sm text-red min-h-[18px] text-center px-4 bg-red/10 py-3 rounded-xl border border-red/20 backdrop-blur-md shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-fadeUp">
                 {error}
+              </div>
+            )}
+
+            {authError && (
+              <div className="text-[11px] md:text-xs text-amber text-center px-4 py-3 rounded-xl border border-amber/25 bg-amber/10 backdrop-blur-md leading-relaxed animate-fadeUp">
+                ⚠️ {authError}
               </div>
             )}
 

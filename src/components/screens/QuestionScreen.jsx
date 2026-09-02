@@ -6,11 +6,29 @@ export const QuestionScreen = () => {
   const { gameState, currentUser, updateGameDoc } = useGame();
   const { currentRound, roundOrder, players, roundEndTime, votes, revealed, hostUid } = gameState;
   
-  const subjectUid = roundOrder?.[currentRound];
+  // Each round entry is { uid, setIndex } — one entry per statement set.
+  const roundEntry = roundOrder?.[currentRound];
+  const subjectUid = roundEntry?.uid;
+  const setIndex = roundEntry?.setIndex ?? 0;
   const subject = players?.[subjectUid];
+  const activeSet = subject?.statementSets?.[setIndex];
   const me = players?.[currentUser?.uid];
   const isMe = subjectUid === currentUser?.uid;
   const isHost = currentUser?.uid === hostUid;
+
+  // Host spectator data: live votes per statement, who still has to vote, and
+  // the running scoreboard. Players never see any of this — only the host does.
+  const votersByStatement = [0, 1, 2].map((idx) =>
+    Object.entries(votes || {})
+      .filter(([uid, choice]) => choice === idx && players?.[uid])
+      .map(([uid]) => ({ uid, ...players[uid] }))
+  );
+  const waitingOn = Object.entries(players || {})
+    .filter(([uid]) => uid !== subjectUid && votes?.[uid] === undefined)
+    .map(([, p]) => p.name);
+  const liveStandings = Object.entries(players || {})
+    .map(([uid, p]) => ({ uid, ...p }))
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
   
   const [timeLeft, setTimeLeft] = useState(30);
   const hasRevealedRef = useRef(false);
@@ -48,13 +66,13 @@ export const QuestionScreen = () => {
 
     if (timeLeft === 0 || allVoted) {
       hasRevealedRef.current = true;
-      handleReveal();
+      handleReveal().catch((err) => console.error('handleReveal failed:', err));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, votes, players, isHost, revealed]);
 
   const handleVote = async (idx) => {
-    if (revealed || isMe) return;
+    if (revealed || isMe || isHost) return;
     await updateGameDoc({
       [`votes.${currentUser.uid}`]: idx
     });
@@ -70,7 +88,7 @@ export const QuestionScreen = () => {
     
     voters.forEach(vUid => {
       const chosen = votes?.[vUid];
-      const correct = chosen === subject.lieIndex;
+      const correct = chosen === activeSet.lieIndex;
       const vPlayer = players[vUid];
       const fast = correct && (timeLeft >= 20); // rough approximation
       
@@ -111,7 +129,7 @@ export const QuestionScreen = () => {
     }, 3000);
   };
 
-  if (!subject) return null;
+  if (!subject || !activeSet) return null;
 
   const myVote = votes?.[currentUser?.uid];
   const votesCast = Object.keys(votes || {}).length;
@@ -125,11 +143,19 @@ export const QuestionScreen = () => {
           </div>
         </div>
         <div className="text-right md:text-left">
-          <div className="text-[26px] md:text-[36px] font-black text-transparent bg-clip-text bg-gradient-to-r from-amber to-orange-400 leading-none drop-shadow-[0_0_10px_rgba(245,166,35,0.3)]">{Math.round(me?.score || 0)} <span className="text-[12px] md:text-[16px] text-white/50 uppercase tracking-widest font-bold hidden md:inline-block">pts</span></div>
-          {me?.streak >= 2 && (
-            <div className="text-[11px] md:text-[14px] text-coral mt-1.5 font-bold tracking-wide">
-              🔥 {me.streak} streak
+          {isHost ? (
+            <div className="text-[12px] md:text-[14px] font-black text-amber tracking-[3px] uppercase">
+              👁 Spectating
             </div>
+          ) : (
+            <>
+              <div className="text-[26px] md:text-[36px] font-black text-transparent bg-clip-text bg-gradient-to-r from-amber to-orange-400 leading-none drop-shadow-[0_0_10px_rgba(245,166,35,0.3)]">{Math.round(me?.score || 0)} <span className="text-[12px] md:text-[16px] text-white/50 uppercase tracking-widest font-bold hidden md:inline-block">pts</span></div>
+              {me?.streak >= 2 && (
+                <div className="text-[11px] md:text-[14px] text-coral mt-1.5 font-bold tracking-wide">
+                  🔥 {me.streak} streak
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -170,9 +196,10 @@ export const QuestionScreen = () => {
         </div>
       ) : (
         <div className="px-6 py-4 pb-6 flex flex-col md:grid md:grid-cols-3 gap-3.5 md:gap-6 flex-1 justify-center perspective-[1000px] md:w-full md:max-w-5xl md:flex-none md:mt-4">
-          {subject.statements.map((stmt, i) => {
-            const isLie = subject.lieIndex === i;
+          {activeSet.statements.map((stmt, i) => {
+            const isLie = activeSet.lieIndex === i;
             const amISelected = myVote === i;
+            const statementVoters = votersByStatement[i];
             
             let revealClass = '';
             if (revealed) {
@@ -186,13 +213,13 @@ export const QuestionScreen = () => {
             const numVotes = Object.values(votes || {}).filter(v => v === i).length;
 
             return (
-              <button 
+              <button
                 key={i}
-                disabled={revealed || isMe}
+                disabled={revealed || isMe || isHost}
                 onClick={() => handleVote(i)}
-                className={`rounded-xl p-5 md:p-8 text-left border backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 relative 
+                className={`rounded-xl p-5 md:p-8 text-left border backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 relative
                   ${!revealed && !amISelected ? 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]' : ''}
-                  ${!revealed && !isMe ? 'hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] cursor-pointer' : 'cursor-default'}
+                  ${!revealed && !isMe && !isHost ? 'hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] cursor-pointer' : 'cursor-default'}
                   ${revealed ? 'animate-cardFlip' : ''}
                   ${revealClass}
                 `}
@@ -203,12 +230,25 @@ export const QuestionScreen = () => {
                 <div className={`text-[15px] md:text-[18px] font-medium leading-[1.5] transition-colors ${revealed && !isLie ? 'text-white/50' : 'text-white'}`}>
                   {stmt}
                 </div>
-                {revealed && (
+
+                {/* Host only: live tally of exactly who picked this statement */}
+                {isHost && statementVoters.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {statementVoters.map((v) => (
+                      <div key={v.uid} className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-black/40 border border-white/10">
+                        <PlayerAvatar name={v.name} color={v.color} size="sm" className="!w-4 !h-4 !text-[7px]" />
+                        <span className="text-[10px] font-bold leading-none" style={{ color: v.color }}>{v.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {(revealed || isHost) && (
                   <>
-                    <div className={`absolute top-4 right-4 md:top-6 md:right-6 text-[12px] md:text-[14px] font-bold ${isLie ? 'text-red' : 'text-white/30'}`}>
-                      {numVotes} {numVotes === 1 ? 'picked this' : 'picked this'}
+                    <div className={`absolute top-4 right-4 md:top-6 md:right-6 text-[12px] md:text-[14px] font-bold ${revealed ? (isLie ? 'text-red' : 'text-white/30') : 'text-white/60'}`}>
+                      {numVotes} picked this
                     </div>
-                    {isLie && (
+                    {revealed && isLie && (
                       <div className="absolute -bottom-[2px] left-1/2 -translate-x-1/2 bg-red text-white text-[10px] md:text-[12px] font-extrabold px-4 py-1 md:py-1.5 rounded-b-[10px] tracking-[2px] uppercase whitespace-nowrap shadow-[0_0_15px_rgba(239,68,68,0.8)]">
                         THE LIE
                       </div>
@@ -218,6 +258,45 @@ export const QuestionScreen = () => {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* Host-only spectator panel: live scoreboard + who still has to vote */}
+      {isHost && (
+        <div className="mx-6 md:mx-0 mt-5 md:mt-8 mb-6 md:mb-8 md:w-full md:max-w-5xl rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5 shrink-0">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+            <div className="text-[10px] tracking-[3px] uppercase text-white/50 font-bold">
+              Live scores
+            </div>
+            {!revealed && (waitingOn.length > 0
+              ? <div className="text-[11px] text-amber font-bold tracking-wide truncate max-w-[60%]">⏳ Waiting on: {waitingOn.join(', ')}</div>
+              : <div className="text-[11px] text-green font-bold tracking-wide">✓ All votes in — revealing…</div>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {liveStandings.map((p) => {
+              const hasVoted = p.uid !== subjectUid && votes?.[p.uid] !== undefined;
+              return (
+                <div key={p.uid} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+                  <PlayerAvatar name={p.name} color={p.color} size="sm" />
+                  <div className="flex-1 text-[13px] font-bold tracking-tight truncate" style={{ color: p.color }}>
+                    {p.name}
+                    {p.uid === subjectUid && <span className="text-white/30 font-medium ml-1.5">(in the hot seat)</span>}
+                  </div>
+                  <div className="text-[10px] font-bold uppercase tracking-wide w-16 text-right whitespace-nowrap">
+                    {p.uid === subjectUid
+                      ? <span className="text-white/25">hot seat</span>
+                      : hasVoted
+                        ? <span className="text-green">✓ voted</span>
+                        : <span className="text-amber">voting…</span>}
+                  </div>
+                  <div className="text-[16px] md:text-[20px] font-black text-transparent bg-clip-text bg-gradient-to-r from-amber to-orange-400 w-10 text-right">
+                    {Math.round(p.score || 0)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
