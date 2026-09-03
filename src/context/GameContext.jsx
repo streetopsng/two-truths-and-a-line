@@ -253,6 +253,9 @@ export const GameProvider = ({ children }) => {
 
   // Actions
   const createGame = async (playerName, presetCode) => {
+    if (!ggSession) {
+      throw new Error('This experience is only available through GummyGum. Head back to the hub to launch it.');
+    }
     if (MOCK_MODE) {
       const code = "TEST12";
       const mkBot = (i, name, sets) => ({
@@ -368,6 +371,9 @@ export const GameProvider = ({ children }) => {
   };
 
   const joinGame = async (code, playerName) => {
+    if (!ggSession) {
+      throw new Error('This experience is only available through GummyGum. Head back to the hub to launch it.');
+    }
     if (MOCK_MODE) {
       alert(
         "Join game doesn't work in Mock Mode. Please click Create Game to test.",
