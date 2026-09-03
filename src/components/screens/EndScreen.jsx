@@ -3,7 +3,7 @@ import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
 export const EndScreen = () => {
-  const { gameState, leaveGame } = useGame();
+  const { gameState, leaveGame, ggSession } = useGame();
   const { players } = gameState;
   const [confetti, setConfetti] = useState([]);
 
@@ -131,6 +131,11 @@ export const EndScreen = () => {
           </button>
         ))}
       </div>
+      {ggSession && (
+        <a href="https://gummygum.app" className="pb-8 text-white/40 text-[13px] font-bold hover:text-white transition-colors cursor-pointer">
+          Done — back to GummyGum →
+        </a>
+      )}
     </div>
   );
 };
