@@ -190,7 +190,7 @@ export const GameProvider = ({ children }) => {
         liarPoints: hostPlayer?.liarPoints ?? 0,
         bestLiarName: bestLiar?.name ?? null,
         lieDetectorName: lieDetector?.name ?? null,
-        leaderboard: ranked.map((p) => ({ name: p.name, score: p.score ?? 0 })),
+        leaderboard: ranked.map((p) => ({ name: p.name, score: p.score ?? 0, isHost: p.uid === currentUser.uid })),
       });
     } catch (err) {
       console.error("GummyGum result report failed to build", err);
