@@ -8,13 +8,22 @@ export const HomeScreen = () => {
   const [joinCode, setJoinCode] = useState('');
   const [joinName, setJoinName] = useState('');
   const [error, setError] = useState('');
+  const [showGateModal, setShowGateModal] = useState(false);
+
+  const handleGameError = (err) => {
+    if (err.message.includes('only available through GummyGum')) {
+      setShowGateModal(true);
+    } else {
+      setError(err.message);
+    }
+  };
 
   const handleCreate = async () => {
     try {
       await createGame("Host"); // Prompting for name could be added
     } catch (err) {
       console.error("Create game failed:", err);
-      setError(err.message);
+      handleGameError(err);
     }
   };
 
@@ -32,11 +41,25 @@ export const HomeScreen = () => {
       await joinGame(joinCode.toUpperCase(), joinName);
     } catch (err) {
       console.error("Join game failed:", err);
-      setError(err.message);
+      handleGameError(err);
     }
   };
 
-  return showJoin ? (
+  return (
+    <>
+    {showGateModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowGateModal(false)} />
+        <div className="relative bg-[#12131a] border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+          <h3 className="text-xl font-black mb-2">Not available here</h3>
+          <p className="text-sm text-white/60 mb-6">This experience is only available through GummyGum. Head back to the hub to launch it.</p>
+          <a href="https://gummygum.app">
+            <Button variant="amber" className="w-full">Back to GummyGum</Button>
+          </a>
+        </div>
+      </div>
+    )}
+    {showJoin ? (
         <div className="flex flex-col h-full max-w-[430px] md:max-w-[500px] w-full mx-auto justify-center p-6 relative z-10 animate-fadeUp">
           <button 
             onClick={() => { setShowJoin(false); setError(''); }}
@@ -137,5 +160,7 @@ export const HomeScreen = () => {
             </div>
           </div>
         </div>
-      );
+      )}
+    </>
+  );
 };
