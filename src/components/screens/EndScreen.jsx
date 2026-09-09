@@ -143,10 +143,10 @@ export const EndScreen = () => {
             </button>
           ) : (
             <button
-              onClick={() => returnToGummyGum()}
+              onClick={() => window.location.reload()}
               className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-[14px] transition-all cursor-pointer"
             >
-              Return to GummyGum
+              Leave Game
             </button>
           )}
         </div>
