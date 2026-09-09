@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
+import { closeGummyGumSession, returnToGummyGum } from '../../lib/gummygumSession';
 
 export const EndScreen = () => {
   const { gameState, leaveGame, ggSession } = useGame();
@@ -132,9 +133,23 @@ export const EndScreen = () => {
         ))}
       </div>
       {ggSession && (
-        <a href="https://gummygum.app" className="pb-8 text-white/40 text-[13px] font-bold hover:text-white transition-colors cursor-pointer">
-          Done — back to GummyGum →
-        </a>
+        <div className="pb-8 flex flex-col sm:flex-row gap-3 items-center z-10">
+          {ggSession.isHost ? (
+            <button
+              onClick={() => closeGummyGumSession()}
+              className="px-6 py-3 rounded-full bg-amber hover:bg-amber/90 text-black font-extrabold text-[14px] transition-all cursor-pointer shadow-lg"
+            >
+              Close Session & Return to GummyGum
+            </button>
+          ) : (
+            <button
+              onClick={() => returnToGummyGum()}
+              className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-[14px] transition-all cursor-pointer"
+            >
+              Return to GummyGum
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
