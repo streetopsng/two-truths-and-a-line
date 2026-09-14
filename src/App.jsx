@@ -77,10 +77,9 @@ const GameCoordinator = () => {
     return <div className="h-screen w-full bg-[#0a0b10]" />;
   }
 
-  // Restriction disabled: allow direct access without GummyGum launch session
-  // if (!ggSession) {
-  //   return <GummyGumLockedScreen />;
-  // }
+  if (!ggSession) {
+    return <GummyGumLockedScreen />;
+  }
 
   // Waiting for the GummyGum pre-created room to show up
   if (ggSession?.roomCode && gameState.status === 'home') {
