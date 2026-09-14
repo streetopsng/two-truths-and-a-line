@@ -15,7 +15,6 @@ export const LeaderboardScreen = () => {
   const isMe = subjectUid === currentUser?.uid;
   const isHost = currentUser?.uid === hostUid;
   
-  // Did current user guess correctly?
   const myVote = votes?.[currentUser?.uid];
   const voterCorrect = myVote === activeSet?.lieIndex;
 

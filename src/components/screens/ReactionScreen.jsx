@@ -49,7 +49,6 @@ export const ReactionScreen = () => {
   ];
 
   if (!isMe) {
-    // Other players just see a waiting screen while subject reacts
     return (
       <div className="flex flex-col h-full max-w-[430px] mx-auto justify-center items-center">
         <div className="text-4xl animate-bounce mb-4">{subject?.lastReaction || '⏳'}</div>

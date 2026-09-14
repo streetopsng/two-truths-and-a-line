@@ -14,7 +14,6 @@ export const EndScreen = () => {
   const lieDetector = [...allPlayers].sort((a, b) => (b.correctGuesses || 0) - (a.correctGuesses || 0))[0];
 
   useEffect(() => {
-    // Generate confetti
     const cols = ['#F5A623', '#3b82f6', '#a855f7', '#22c55e', '#ef4444'];
     const newConfetti = Array.from({ length: 20 }).map((_, i) => ({
       left: Math.random() * 100,
