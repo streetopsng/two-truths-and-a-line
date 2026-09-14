@@ -31,11 +31,11 @@ export const EndScreen = () => {
 
   return (
     <div className="flex flex-col h-full max-w-[430px] md:max-w-none w-full mx-auto items-center overflow-hidden relative z-10">
-      <button 
-        onClick={leaveGame}
+      <button
+        onClick={() => (ggSession?.isHost ? closeGummyGumSession() : (ggSession ? returnToGummyGum() : leaveGame()))}
         className="absolute top-6 left-6 md:top-8 md:left-8 text-[12px] md:text-[14px] font-bold uppercase tracking-wider text-white/30 hover:text-white transition-colors cursor-pointer z-20"
       >
-        Leave game
+        {ggSession?.isHost ? 'End session' : 'Leave game'}
       </button>
 
       <div className="pt-16 md:pt-24 px-6 text-center w-full shrink-0 relative z-10">
