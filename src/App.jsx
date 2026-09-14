@@ -29,7 +29,6 @@ const STATUS_ROUTES = {
 // own device (writing statements) without being forced back to /lobby.
 const LOBBY_ROUTES = ['/lobby', '/submit', '/submit/wait'];
 
-// Keeps the URL in sync with the shared game state.
 const GameRouteSync = () => {
   const { gameState } = useGame();
   const location = useLocation();
@@ -101,7 +100,6 @@ const GameShell = () => {
 
   return (
     <div className="h-screen w-full bg-[#0a0b10] text-white font-inter overflow-hidden relative selection:bg-amber/30 flex">
-      {/* Dynamic Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-amber/20 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-glowPulse"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-coral/20 rounded-full mix-blend-screen filter blur-[120px] opacity-40 animate-glowPulse" style={{ animationDelay: '1.5s' }}></div>

@@ -9,7 +9,6 @@ export const DesktopSidebar = () => {
   if (status === 'home' || !gameCode) return null;
 
   const playersList = Object.values(players || {});
-  // Sort by score for most screens except lobby
   if (status !== 'lobby') {
     playersList.sort((a, b) => (b.score || 0) - (a.score || 0));
   }

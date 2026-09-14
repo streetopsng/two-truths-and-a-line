@@ -57,7 +57,6 @@ export async function resolveGummyGumLaunch() {
   }
 }
 
-// Reports the launching player's final result back to the hub.
 export async function reportGummyGumResult(report) {
   const session = getGummyGumSession();
   if (!session || !session.reportToken) return;

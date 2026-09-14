@@ -40,7 +40,6 @@ export const QuestionScreen = () => {
     }
   }, [revealed]);
 
-  // Sync Timer
   useEffect(() => {
     const calcTime = () => {
       if (!roundEndTime) return 30;
@@ -56,7 +55,6 @@ export const QuestionScreen = () => {
     return () => clearInterval(timer);
   }, [roundEndTime]);
 
-  // Trigger reveal when time is up or everyone voted
   useEffect(() => {
     if (!isHost || revealed || hasRevealedRef.current) return;
     
@@ -79,7 +77,6 @@ export const QuestionScreen = () => {
   };
 
   const handleReveal = async () => {
-    // Calculate points
     const voters = Object.keys(players || {}).filter(uid => uid !== subjectUid);
     const results = {};
     const updates = { revealed: true };
@@ -122,8 +119,7 @@ export const QuestionScreen = () => {
     updates[`players.${subjectUid}.liarPoints`] = (subject.liarPoints || 0) + bonus;
 
     await updateGameDoc(updates);
-    
-    // Move to reaction after a few seconds
+
     setTimeout(() => {
       updateGameDoc({ status: 'reaction', roundBonus: bonus, totalVoters: voters.length, fooled: wrongVoters });
     }, 3000);

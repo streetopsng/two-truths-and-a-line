@@ -203,7 +203,6 @@ export const GameProvider = ({ children }) => {
     currentUser,
   ]);
 
-  // Mock Helper for Local State mutation
   const applyMockUpdates = (data) => {
     setGameState((prev) => {
       const next = { ...prev };
@@ -251,7 +250,6 @@ export const GameProvider = ({ children }) => {
     );
   };
 
-  // Actions
   const createGame = async (playerName, presetCode) => {
     if (!ggSession) {
       throw new Error('This experience is only available through GummyGum. Head back to the hub to launch it.');
@@ -489,7 +487,6 @@ export const GameProvider = ({ children }) => {
 
     if (MOCK_MODE) {
       applyMockUpdates(updates);
-      // Simulate bots voting instantly for testing
       setTimeout(() => {
         applyMockUpdates({
           [`votes.bot_1`]: Math.floor(Math.random() * 3),
@@ -552,7 +549,6 @@ export const GameProvider = ({ children }) => {
     if (MOCK_MODE) {
       applyMockUpdates(updates);
 
-      // If moving to next question, queue bot votes
       if (status === "question") {
         setTimeout(() => {
           applyMockUpdates({
