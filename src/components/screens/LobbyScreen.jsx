@@ -6,10 +6,10 @@ import { Badge } from '../ui/Badge';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
 export const LobbyScreen = () => {
-  const { gameState, currentUser, startGame, ggSession } = useGame();
+  const { gameState, currentUser, startGame } = useGame();
   const navigate = useNavigate();
   const [error, setError] = useState('');
-  const { gameCode, players, hostUid } = gameState;
+  const { players, hostUid } = gameState;
 
   const handleStart = async () => {
     setError('');
@@ -38,25 +38,11 @@ export const LobbyScreen = () => {
         <Badge variant="amber" className="shadow-[0_0_15px_rgba(245,166,35,0.2)] border border-amber/30">{playersList.length} / 10</Badge>
       </div>
 
-      {ggSession ? (
-        <div className="text-center pt-6 px-6 md:hidden">
-          <div className="text-[10px] tracking-[3px] uppercase text-white/50 font-bold">
-            {isHost ? "Invites already sent by email" : 'Waiting for the host to start'}
-          </div>
+      <div className="text-center pt-6 px-6 md:hidden">
+        <div className="text-[10px] tracking-[3px] uppercase text-white/50 font-bold">
+          {isHost ? "Invites already sent by email" : 'Waiting for the host to start'}
         </div>
-      ) : (
-        <div className="text-center pt-6 px-6 md:hidden">
-          <div className="text-[10px] tracking-[3px] uppercase text-white/50 font-bold">
-            Game code — share this
-          </div>
-          <div className="text-[44px] font-black tracking-[12px] text-transparent bg-clip-text bg-gradient-to-r from-amber to-orange-400 mt-2 drop-shadow-[0_0_20px_rgba(245,166,35,0.3)]">
-            {gameCode}
-          </div>
-          <div className="text-xs text-white/40 mt-1 font-medium">
-            Players enter this to join
-          </div>
-        </div>
-      )}
+      </div>
 
       <div className="flex-1 overflow-y-auto px-6 pt-6 pb-6 mt-4 md:hidden">
         <div className="flex flex-col gap-2">
@@ -84,7 +70,7 @@ export const LobbyScreen = () => {
         <p className="text-[16px] text-white/60 font-medium max-w-md leading-relaxed">
           {isHost
             ? "You set the game up and run the show — but you don't play. Once it starts, watch each round live: who votes for what, and every point scored."
-            : 'The game code is in the sidebar. Once everyone has joined and submitted their statements, the host can start the game.'}
+            : 'Once everyone has joined and submitted their statements, the host can start the game.'}
         </p>
       </div>
 

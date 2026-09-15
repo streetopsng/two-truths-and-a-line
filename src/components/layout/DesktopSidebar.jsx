@@ -3,7 +3,7 @@ import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
 export const DesktopSidebar = () => {
-  const { gameState, currentUser, ggSession } = useGame();
+  const { gameState, currentUser } = useGame();
   const { players, gameCode, status, currentRound, roundOrder } = gameState;
 
   if (status === 'home' || !gameCode) return null;
@@ -12,22 +12,11 @@ export const DesktopSidebar = () => {
   if (status !== 'lobby') {
     playersList.sort((a, b) => (b.score || 0) - (a.score || 0));
   }
-  
+
   const me = players?.[currentUser?.uid];
 
   return (
     <div className="hidden md:flex flex-col w-[320px] shrink-0 border-r border-white/10 bg-white/[0.02] backdrop-blur-xl h-full p-6 relative z-20 shadow-[10px_0_30px_rgba(0,0,0,0.2)]">
-      {!ggSession && (
-        <div className="mb-8">
-          <div className="text-[10px] tracking-[3px] uppercase text-white/50 font-bold mb-1">
-            Game Code
-          </div>
-          <div className="text-[32px] font-black tracking-[8px] text-transparent bg-clip-text bg-gradient-to-r from-amber to-orange-400 drop-shadow-[0_0_10px_rgba(245,166,35,0.3)]">
-            {gameCode}
-          </div>
-        </div>
-      )}
-
       {(status === 'question' || status === 'reaction' || status === 'leaderboard') && (
         <div className="mb-6 p-4 rounded-xl bg-white/[0.03] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
           <div className="text-[10px] tracking-[3px] uppercase text-white/50 font-bold mb-1">
