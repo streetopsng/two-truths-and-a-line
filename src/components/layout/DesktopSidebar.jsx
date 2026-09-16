@@ -47,7 +47,7 @@ export const DesktopSidebar = () => {
                     : 'bg-white/[0.03] border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]'
                 }`}
               >
-                <PlayerAvatar name={p.name} color={p.color} size="sm" />
+                <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-bold tracking-tight truncate" style={{ color: p.color }}>
                     {p.name} {isMeRow && <span className="text-white/30 font-medium ml-1">(you)</span>}

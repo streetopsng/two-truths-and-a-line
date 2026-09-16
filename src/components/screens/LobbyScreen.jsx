@@ -52,7 +52,7 @@ export const LobbyScreen = () => {
               className="flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.05] backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] animate-slideIn"
               style={{ animationDelay: `${i * 0.05}s` }}
             >
-              <PlayerAvatar name={p.name} color={p.color} />
+              <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} />
               <div className="flex-1 text-[14px] font-bold tracking-tight" style={{ color: p.color }}>
                 {p.name} {p.name === me?.name ? <span className="text-white/30 ml-1 font-medium">(you)</span> : ''}
               </div>

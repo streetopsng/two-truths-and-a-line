@@ -169,7 +169,7 @@ export const QuestionScreen = () => {
       </div>
 
       <div className="mx-6 md:mx-0 mt-5 md:mt-8 bg-white/[0.03] backdrop-blur-md rounded-xl p-4 md:p-6 flex items-center gap-3.5 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] shrink-0 relative md:w-full md:max-w-5xl">
-        <PlayerAvatar name={subject.name} color={subject.color} size="lg" />
+        <PlayerAvatar name={subject.name} color={subject.color} avatarId={subject.avatarId} size="lg" />
         <div className="flex-1">
           <div className="text-[17px] md:text-[24px] font-extrabold tracking-tight">{subject.name} {isMe ? <span className="text-white/30 font-medium ml-1">(you)</span> : ''}</div>
           <div className="text-[13px] md:text-[16px] text-amber mt-0.5 font-medium opacity-90">Which one is the lie?</div>
@@ -232,7 +232,7 @@ export const QuestionScreen = () => {
                   <div className="flex flex-wrap gap-1.5 mt-3">
                     {statementVoters.map((v) => (
                       <div key={v.uid} className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-black/40 border border-white/10">
-                        <PlayerAvatar name={v.name} color={v.color} size="sm" className="!w-4 !h-4 !text-[7px]" />
+                        <PlayerAvatar name={v.name} color={v.color} avatarId={v.avatarId} size="sm" className="!w-4 !h-4 !text-[7px]" />
                         <span className="text-[10px] font-bold leading-none" style={{ color: v.color }}>{v.name}</span>
                       </div>
                     ))}
@@ -274,7 +274,7 @@ export const QuestionScreen = () => {
               const hasVoted = p.uid !== subjectUid && votes?.[p.uid] !== undefined;
               return (
                 <div key={p.uid} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
-                  <PlayerAvatar name={p.name} color={p.color} size="sm" />
+                  <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
                   <div className="flex-1 text-[13px] font-bold tracking-tight truncate" style={{ color: p.color }}>
                     {p.name}
                     {p.uid === subjectUid && <span className="text-white/30 font-medium ml-1.5">(in the hot seat)</span>}

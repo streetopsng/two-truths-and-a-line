@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Button } from '../ui/Button';
+import { PlayerAvatar } from '../ui/PlayerAvatar';
+import { AvatarPickerModal } from '../ui/AvatarPickerModal';
 
 export const HomeScreen = () => {
   const { createGame, joinGame, authReady, authError } = useGame();
   const [showJoin, setShowJoin] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joinName, setJoinName] = useState('');
+  const [joinAvatarId, setJoinAvatarId] = useState(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [error, setError] = useState('');
   const [showGateModal, setShowGateModal] = useState(false);
 
@@ -38,7 +42,7 @@ export const HomeScreen = () => {
     }
     setError('');
     try {
-      await joinGame(joinCode.toUpperCase(), joinName);
+      await joinGame(joinCode.toUpperCase(), joinName, joinAvatarId);
     } catch (err) {
       console.error("Join game failed:", err);
       handleGameError(err);
@@ -98,6 +102,20 @@ export const HomeScreen = () => {
               />
             </div>
 
+            <div className="mt-2">
+              <div className="text-[11px] font-extrabold tracking-[2px] uppercase text-white/40 mb-2 ml-1">Your Avatar</div>
+              <button
+                type="button"
+                onClick={() => setShowAvatarPicker(true)}
+                className="w-full flex items-center gap-3 bg-black/40 border border-white/10 rounded-xl p-3 hover:border-amber transition-all cursor-pointer"
+              >
+                <PlayerAvatar name={joinName} color="#F5A623" avatarId={joinAvatarId} size="lg" />
+                <span className="text-[14px] font-bold text-white/70">
+                  {joinAvatarId ? 'Change avatar' : 'Choose an avatar (optional)'}
+                </span>
+              </button>
+            </div>
+
             {error && (
               <div className="text-sm text-red mt-2 font-bold text-center animate-fadeUp">
                 {error}
@@ -108,6 +126,14 @@ export const HomeScreen = () => {
               Join Lobby →
             </Button>
           </div>
+
+          {showAvatarPicker && (
+            <AvatarPickerModal
+              selectedId={joinAvatarId}
+              onSelect={setJoinAvatarId}
+              onClose={() => setShowAvatarPicker(false)}
+            />
+          )}
         </div>
       ) : (
         <div className="flex flex-col h-full max-w-[430px] md:max-w-none w-full mx-auto justify-between p-6 md:p-12 relative z-10 animate-fadeUp">

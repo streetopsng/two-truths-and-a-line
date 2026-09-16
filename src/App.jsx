@@ -10,6 +10,7 @@ import { QuestionScreen } from './components/screens/QuestionScreen';
 import { ReactionScreen } from './components/screens/ReactionScreen';
 import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
 import { EndScreen } from './components/screens/EndScreen';
+import { GgAvatarSetupScreen } from './components/screens/GgAvatarSetupScreen';
 
 import { DesktopSidebar } from './components/layout/DesktopSidebar';
 
@@ -59,19 +60,19 @@ const GummyGumLockedScreen = () => (
 );
 
 const GameCoordinator = () => {
-  const { gameState, ggSession, ggChecked, createGame, joinGame } = useGame();
+  const { gameState, ggSession, ggChecked, createGame } = useGame();
   const routedRef = React.useRef(false);
 
+  // Hosts spectate and never get a `players` entry, so they skip straight
+  // into their pre-created room — no avatar to pick. Non-host participants
+  // are routed to GgAvatarSetupScreen instead (below), which calls joinGame
+  // itself once they've picked an avatar (or skipped).
   useEffect(() => {
-    if (!ggSession || !ggSession.roomCode || routedRef.current) return;
+    if (!ggSession || !ggSession.roomCode || !ggSession.isHost || routedRef.current) return;
     routedRef.current = true;
     const name = ggSession.player?.name || 'Guest';
-    if (ggSession.isHost) {
-      createGame(name, ggSession.roomCode).catch((err) => console.error('GummyGum auto-create failed', err));
-    } else {
-      joinGame(ggSession.roomCode, name).catch((err) => console.error('GummyGum auto-join failed', err));
-    }
-  }, [ggSession, createGame, joinGame]);
+    createGame(name, ggSession.roomCode).catch((err) => console.error('GummyGum auto-create failed', err));
+  }, [ggSession, createGame]);
 
   if (!ggChecked) {
     return <div className="h-screen w-full bg-[#0a0b10]" />;
@@ -81,8 +82,12 @@ const GameCoordinator = () => {
     return <GummyGumLockedScreen />;
   }
 
-  // Waiting for the GummyGum pre-created room to show up
-  if (ggSession?.roomCode && gameState.status === 'home') {
+  if (ggSession.roomCode && gameState.status === 'home') {
+    // Non-host: pick an avatar before joining the pre-created room.
+    if (!ggSession.isHost) {
+      return <GgAvatarSetupScreen />;
+    }
+    // Host: waiting for the GummyGum pre-created room to show up.
     return <div className="h-screen w-full bg-[#0a0b10]" />;
   }
 
