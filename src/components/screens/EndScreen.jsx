@@ -69,9 +69,10 @@ export const EndScreen = () => {
           
           return (
             <div key={i} className="flex flex-col items-center gap-2 md:gap-4">
-              <PlayerAvatar 
-                name={p.name} 
-                color={p.color} 
+              <PlayerAvatar
+                name={p.name}
+                color={p.color}
+                avatarId={p.avatarId}
                 className={`animate-dropIn shadow-[0_10px_20px_rgba(0,0,0,0.5)]`}
                 size={i === 1 ? 'lg' : 'md'}
                 style={{ animationDelay: `${i * 0.2}s` }}
@@ -107,7 +108,7 @@ export const EndScreen = () => {
                 <div className="w-[20px] md:w-[30px] font-black text-white/30 text-[14px] md:text-[20px] text-center">
                   {i + 1}
                 </div>
-                <PlayerAvatar name={p.name} color={p.color} size="sm" />
+                <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
                 <div className="flex-1 text-[14px] md:text-[20px] font-bold tracking-tight" style={{ color: p.color }}>
                   {p.name}
                 </div>

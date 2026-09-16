@@ -368,7 +368,7 @@ export const GameProvider = ({ children }) => {
     setGameCode(code);
   };
 
-  const joinGame = async (code, playerName) => {
+  const joinGame = async (code, playerName, avatarId = null) => {
     if (!ggSession) {
       throw new Error('This experience is only available through GummyGum. Head back to the hub to launch it.');
     }
@@ -406,6 +406,7 @@ export const GameProvider = ({ children }) => {
       [`players.${user.uid}`]: {
         name: playerName,
         color: COLORS[numPlayers % COLORS.length],
+        avatarId: avatarId || null,
         score: 0,
         streak: 0,
         correctGuesses: 0,

@@ -53,7 +53,7 @@ export const LeaderboardScreen = () => {
         <div className="flex flex-col md:flex-row md:gap-8">
           <div className="mx-6 md:mx-0 mb-5 md:mb-0 bg-white/[0.03] border border-white/10 backdrop-blur-md rounded-xl overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:flex-1 h-fit">
             <div className="p-3.5 md:p-5 px-5 md:px-6 flex items-center gap-3 md:gap-4 border-b border-white/5 bg-black/20">
-              <PlayerAvatar name={subject.name} color={subject.color} size="md" />
+              <PlayerAvatar name={subject.name} color={subject.color} avatarId={subject.avatarId} size="md" />
               <div className="text-[14px] md:text-[18px] font-bold flex-1 tracking-tight">
                 {subject.name}'s statements {subject.lastReaction && <span className="ml-1 text-[16px] md:text-[20px]">{subject.lastReaction}</span>}
               </div>
@@ -109,7 +109,7 @@ export const LeaderboardScreen = () => {
                     <div className="text-[18px] md:text-[24px] font-extrabold w-6 md:w-8 text-center shrink-0 drop-shadow-md">
                       {medals[i] || (i + 1)}
                     </div>
-                    <PlayerAvatar name={p.name} color={p.color} size="sm" />
+                    <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
                     <div className="flex-1">
                       <div className="text-[14px] md:text-[16px] font-bold tracking-tight" style={{ color: p.color }}>
                         {p.name} {isMeRow ? <span className="text-white/30 ml-1 font-medium">(you)</span> : ''}
