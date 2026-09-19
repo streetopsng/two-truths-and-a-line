@@ -3,13 +3,171 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* Hide scrollbar globally for Chrome, Safari and Opera */
+:root {
+  --bg:        #EDEAE4;
+  --cream:     #FAF7F2;
+  --white:     #FFFFFF;
+  --orange:    #F5821F;
+  --orange2:   #E8710A;
+  --orange-lo: #FDE8D0;
+  --orange-lo2:#FDF0E4;
+  --black:     #1A1A1A;
+  --mid:       #555555;
+  --muted:     #999999;
+  --border:    #E0DBD4;
+  --red:       #E8334A;
+  --green:     #22A855;
+  --r:         16px;
+  --rsm:       10px;
+}
+
+/* Hide scrollbar globally */
 ::-webkit-scrollbar {
   display: none;
 }
-
-/* Hide scrollbar globally for IE, Edge and Firefox */
 * {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--black);
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+/* Buttons from design system */
+.btn {
+  width: 100%;
+  padding: 15px 20px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-orange {
+  background: var(--orange);
+  color: var(--black);
+  box-shadow: 0 4px 0 var(--orange2);
+}
+.btn-orange:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 var(--orange2);
+}
+.btn-orange:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--orange2);
+}
+.btn-dark {
+  background: var(--black);
+  color: white;
+  box-shadow: 0 4px 0 #000;
+}
+.btn-dark:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 #000;
+}
+.btn-dark:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #000;
+}
+.btn-outline {
+  background: white;
+  color: var(--black);
+  border: 2px solid var(--border);
+  box-shadow: 0 3px 0 var(--border);
+}
+.btn-outline:hover:not(:disabled) {
+  border-color: #cbbeaf;
+}
+.btn-outline:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border);
+}
+.btn:disabled, .btn.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Card & input styles */
+.card {
+  background: var(--white);
+  border-radius: var(--r);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.fi {
+  width: 100%;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--rsm);
+  color: var(--black);
+  font-size: 15px;
+  padding: 13px 15px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s;
+}
+.fi:focus {
+  border-color: var(--orange);
+}
+.fi::placeholder {
+  color: #bbb;
+}
+
+/* Background Texture */
+.bg-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.bg-icon {
+  position: absolute;
+  font-size: 30px;
+  opacity: 0.06;
+  user-select: none;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-blink {
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes scoreIn {
+  from { opacity: 0; transform: scale(.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scoreIn {
+  animation: scoreIn .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-dropIn {
+  animation: dropIn .5s ease forwards;
+}
+
+@keyframes fall {
+  0% { transform: translateY(-8px) rotate(0); opacity: 1; }
+  100% { transform: translateY(80px) rotate(360deg); opacity: 0; }
+}
+.animate-fall {
+  animation: fall 1.2s ease-out forwards;
 }

@@ -11,7 +11,7 @@ export const HomeScreen = () => {
 
   const handleCreate = async () => {
     try {
-      await createGame("Host"); // Prompting for name could be added
+      await createGame("Host");
     } catch (err) {
       setError(err.message);
     }
@@ -34,96 +34,199 @@ export const HomeScreen = () => {
     }
   };
 
-  return showJoin ? (
-        <div className="flex flex-col h-full max-w-[430px] md:max-w-[500px] w-full mx-auto justify-center p-6 relative z-10 animate-fadeUp">
-          <button 
-            onClick={() => { setShowJoin(false); setError(''); }}
-            className="absolute top-6 left-6 text-[13px] md:text-[15px] font-bold text-white/50 hover:text-white transition-colors flex items-center gap-2 cursor-pointer"
-          >
-            ← Back
-          </button>
-
-          <div className="text-center mb-8 mt-12">
-            <h2 className="text-[36px] md:text-[48px] font-black tracking-tight leading-none mb-3">Join Game</h2>
-            <p className="text-[15px] text-white/50 font-medium">Enter the code provided by the host.</p>
+  return (
+    <div className="flex flex-col h-full max-w-[430px] md:max-w-[480px] w-full mx-auto justify-between overflow-hidden relative z-10">
+      {showJoin ? (
+        <div className="flex flex-col h-full justify-between p-6 animate-fadeUp">
+          <div className="flex items-center justify-between pt-2">
+            <button 
+              onClick={() => { setShowJoin(false); setError(''); }}
+              className="text-[14px] font-bold text-[#555] hover:text-[#1A1A1A] transition-colors flex items-center gap-1.5 cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]"
+            >
+              ← Back
+            </button>
+            <span className="text-xs font-black text-[#F5821F] tracking-wider uppercase">GummyGum</span>
           </div>
 
-          <div className="flex flex-col gap-4 p-6 md:p-8 rounded-[24px] bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]">
-            <div>
-              <div className="text-[11px] font-extrabold tracking-[2px] uppercase text-white/40 mb-2 ml-1">Game Code</div>
-              <input
-                type="text"
-                placeholder="e.g. LIE-482"
-                className="w-full bg-black/40 border border-white/10 rounded-xl text-white text-xl font-black text-center tracking-[4px] p-4 focus:outline-none focus:border-amber focus:bg-black/60 transition-all placeholder:text-white/20 placeholder:tracking-normal placeholder:font-normal shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)] uppercase"
-                maxLength={8}
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              />
-            </div>
-            
-            <div className="mt-2">
-              <div className="text-[11px] font-extrabold tracking-[2px] uppercase text-white/40 mb-2 ml-1">Your Name</div>
-              <input
-                type="text"
-                placeholder="What should we call you?"
-                className="w-full bg-black/40 border border-white/10 rounded-xl text-white text-[16px] font-bold p-4 focus:outline-none focus:border-amber focus:bg-black/60 transition-all placeholder:text-white/30 shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)]"
-                maxLength={20}
-                value={joinName}
-                onChange={(e) => setJoinName(e.target.value)}
-              />
-            </div>
-
-            {error && (
-              <div className="text-sm text-red mt-2 font-bold text-center animate-fadeUp">
-                {error}
+          <div className="my-auto py-6">
+            <div className="text-center mb-6">
+              <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#F5821F] mb-1">
+                2 Truths & a Lie
               </div>
-            )}
+              <h2 className="text-[32px] font-black tracking-tight text-[#1A1A1A]">Join Game</h2>
+              <p className="text-[14px] text-[#555] mt-1.5 font-medium">Enter the code provided by your host.</p>
+            </div>
 
-            <Button variant="amber" onClick={handleJoin} className="mt-4 w-full py-4 text-[16px] shadow-[0_0_20px_rgba(245,166,35,0.2)] hover:shadow-[0_0_30px_rgba(245,166,35,0.4)]">
-              Join Lobby →
-            </Button>
+            <div className="card p-6 flex flex-col gap-4 bg-white border-[1.5px] border-[#E0DBD4] shadow-[0_4px_0_#E0DBD4] rounded-[20px]">
+              <div>
+                <div className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#555] mb-2">
+                  Game Code
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. LIE-482"
+                  className="fi text-center font-black tracking-[4px] uppercase text-lg"
+                  maxLength={8}
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                />
+              </div>
+              
+              <div>
+                <div className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#555] mb-2">
+                  Your Name
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. Ayoola"
+                  className="fi text-center font-bold text-base"
+                  maxLength={20}
+                  value={joinName}
+                  onChange={(e) => setJoinName(e.target.value)}
+                />
+              </div>
+
+              {error && (
+                <div className="text-xs text-[#E8334A] font-bold text-center bg-[#FFF0EE] border border-[#E8334A]/20 py-2 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <Button onClick={handleJoin} className="mt-2 w-full">
+                Join Lobby →
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-[#999] text-center pb-4 font-semibold">
+            Takes about 30 seconds to set up
           </div>
         </div>
       ) : (
-        <div className="flex flex-col h-full max-w-[430px] md:max-w-none w-full mx-auto justify-between p-6 md:p-12 relative z-10 animate-fadeUp">
-          <div className="absolute top-6 left-6 md:top-12 md:left-12 text-[13px] md:text-[16px] font-black text-transparent bg-clip-text bg-gradient-to-r from-amber to-orange-400 tracking-tight">
-            GummyGum
+        <div className="flex flex-col h-full justify-between animate-fadeUp">
+          {/* Illustrated orange hero top */}
+          <div className="flex-1 relative flex flex-col items-center justify-end pb-7 overflow-hidden min-h-[260px] md:min-h-[300px]">
+            {/* Radial orange blob */}
+            <div 
+              className="absolute inset-[-10%] z-0 rounded-b-[50%]"
+              style={{
+                background: 'radial-gradient(ellipse 80% 70% at 50% 28%, #FFCF99 0%, #FFB347 40%, #F5821F 70%, #E8710A 100%)'
+              }}
+            />
+
+            {/* Illustrated card scene */}
+            <div className="absolute inset-0 z-1 pointer-events-none">
+              {/* Card 1: left, tilted */}
+              <div 
+                className="absolute bg-white rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] flex flex-col items-center justify-center p-2.5 gap-1"
+                style={{ width: '84px', left: '16px', top: '48px', transform: 'rotate(-8deg)' }}
+              >
+                <div className="text-[28px] leading-none">🦊</div>
+                <div className="text-[9px] font-extrabold tracking-wider text-[#aaa] uppercase">Chidinma</div>
+                <div className="h-[4px] rounded-full bg-[#F0EDE8] w-full overflow-hidden">
+                  <div className="h-full rounded-full bg-[#F5821F]" style={{ width: '70%' }}></div>
+                </div>
+                <div className="h-[4px] rounded-full bg-[#F0EDE8] w-full overflow-hidden">
+                  <div className="h-full rounded-full bg-[#FFB347]" style={{ width: '50%' }}></div>
+                </div>
+              </div>
+
+              {/* Card 2: right, tilted other way */}
+              <div 
+                className="absolute bg-white rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] flex flex-col items-center justify-center p-2.5 gap-1"
+                style={{ width: '84px', right: '16px', top: '38px', transform: 'rotate(7deg)' }}
+              >
+                <div className="text-[28px] leading-none">🐻</div>
+                <div className="text-[9px] font-extrabold tracking-wider text-[#aaa] uppercase">Emeka</div>
+                <div className="h-[4px] rounded-full bg-[#F0EDE8] w-full overflow-hidden">
+                  <div className="h-full rounded-full bg-[#3b82f6]" style={{ width: '80%' }}></div>
+                </div>
+                <div className="h-[4px] rounded-full bg-[#F0EDE8] w-full overflow-hidden">
+                  <div className="h-full rounded-full bg-[#93c5fd]" style={{ width: '40%' }}></div>
+                </div>
+              </div>
+
+              {/* Card 3: centre-left */}
+              <div 
+                className="absolute bg-white rounded-[14px] shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center p-2 gap-1 opacity-90 hidden sm:flex"
+                style={{ width: '76px', left: '55px', top: '110px', transform: 'rotate(3deg)' }}
+              >
+                <div className="text-[24px] leading-none">🐯</div>
+                <div className="text-[8px] font-extrabold tracking-wider text-[#aaa] uppercase">Zara</div>
+                <div className="h-[3px] rounded-full bg-[#F0EDE8] w-full">
+                  <div className="h-full rounded-full bg-[#a855f7]" style={{ width: '60%' }}></div>
+                </div>
+              </div>
+
+              {/* Card 4: centre-right */}
+              <div 
+                className="absolute bg-white rounded-[14px] shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center p-2 gap-1 opacity-90 hidden sm:flex"
+                style={{ width: '76px', right: '55px', top: '115px', transform: 'rotate(-5deg)' }}
+              >
+                <div className="text-[24px] leading-none">🦁</div>
+                <div className="text-[8px] font-extrabold tracking-wider text-[#aaa] uppercase">Kelvin</div>
+                <div className="h-[3px] rounded-full bg-[#F0EDE8] w-full">
+                  <div className="h-full rounded-full bg-[#22c55e]" style={{ width: '65%' }}></div>
+                </div>
+              </div>
+
+              {/* Big central ? card */}
+              <div 
+                className="absolute bg-[#F5821F] rounded-[14px] flex items-center justify-center text-[34px] font-black text-white shadow-[0_8px_28px_rgba(245,130,31,0.5)]"
+                style={{ width: '74px', height: '90px', left: '50%', top: '75px', transform: 'translateX(-50%) rotate(-2deg)' }}
+              >
+                ?
+              </div>
+            </div>
+
+            {/* GummyGum badge */}
+            <div className="relative z-10 bg-white/25 backdrop-blur-md border border-white/45 rounded-full px-4 py-1.5 text-xs font-extrabold text-white tracking-wide shadow-sm">
+              GummyGum
+            </div>
+
+            {/* SVG wave mask bottom */}
+            <svg 
+              className="absolute bottom-[-2px] left-0 right-0 h-[56px] w-full z-2" 
+              viewBox="0 0 430 64" 
+              xmlns="http://www.w3.org/2000/svg" 
+              preserveAspectRatio="none"
+            >
+              <path d="M0,32 C80,64 160,0 215,32 C270,64 350,0 430,32 L430,64 L0,64 Z" fill="#EDEAE4" />
+            </svg>
           </div>
-          
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-10 pb-5">
-            <h1 className="text-[42px] md:text-[72px] font-black leading-tight tracking-tight">
+
+          {/* Text & CTAs */}
+          <div className="px-6 pt-4 shrink-0">
+            <h1 className="text-[34px] md:text-[38px] font-black leading-[1.08] text-[#1A1A1A] tracking-tight">
               2 Truths &<br />
-              a <span className="text-transparent bg-clip-text bg-gradient-to-r from-coral to-red">Lie</span>
+              a <span className="text-[#F5821F] underline decoration-[#F5821F]/40 underline-offset-4">Lie</span>
             </h1>
-            <p className="text-[14px] md:text-[18px] text-white/60 mt-4 md:mt-8 leading-relaxed max-w-[280px] md:max-w-[400px] font-medium">
-              How well do your teammates really know you?
+            <p className="text-[14px] md:text-[15px] text-[#555] leading-[1.6] mt-2.5">
+              The team game where <strong>everyone's a suspect.</strong> Share your statements, fool your teammates, and find out who really knows who.
             </p>
           </div>
 
-          <div className="w-full max-w-[500px] mx-auto flex flex-col gap-4 pb-6 md:pb-12 relative z-20">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-3 md:gap-4 w-full">
-              <div className="w-full">
-                <Button onClick={handleCreate} className="shadow-[0_4px_20px_rgba(255,255,255,0.05)] w-full">
-                  Create a game
-                </Button>
-              </div>
-              <div className="w-full">
-                <Button variant="ghost" onClick={() => { setShowJoin(true); setError(''); }} className="w-full">
-                  Join a game
-                </Button>
-              </div>
-            </div>
+          <div className="p-6 flex flex-col gap-2.5 shrink-0">
+            <Button onClick={handleCreate} className="w-full">
+              Create a game
+            </Button>
             
+            <Button variant="outline" onClick={() => { setShowJoin(true); setError(''); }} className="w-full">
+              Join a game
+            </Button>
+
             {error && (
-              <div className="text-xs md:text-sm text-red min-h-[18px] text-center px-4 bg-red/10 py-3 rounded-xl border border-red/20 backdrop-blur-md shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-fadeUp">
+              <div className="text-xs text-[#E8334A] font-bold text-center bg-[#FFF0EE] border border-[#E8334A]/20 py-2 rounded-lg">
                 {error}
               </div>
             )}
 
-            <div className="text-[11px] text-white/30 text-center mt-4 font-bold uppercase tracking-widest">
-              Free · Up to 10 players · No account
+            <div className="text-[11px] text-[#999] text-center mt-1 font-semibold">
+              Free · Up to 10 players · No account needed
             </div>
           </div>
         </div>
-      );
+      )}
+    </div>
+  );
 };

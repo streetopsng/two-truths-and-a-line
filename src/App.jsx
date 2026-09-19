@@ -12,15 +12,23 @@ import { EndScreen } from './components/screens/EndScreen';
 
 import { DesktopSidebar } from './components/layout/DesktopSidebar';
 
-const GummyGumLockedScreen = () => (
-  <div className="h-screen w-full bg-[#0a0b10] text-white font-inter flex items-center justify-center px-6">
-    <div className="max-w-sm w-full text-center space-y-4">
-      <h1 className="text-xl font-bold">This experience is only available through GummyGum</h1>
-      <p className="text-muted text-sm">Open it from the GummyGum hub to play.</p>
-      <a href="https://gummygum.app">
-        <Button variant="amber">Go to GummyGum</Button>
-      </a>
-    </div>
+const BG_ICONS = ['🤥', '🏆', '🎯', '💡', '🎭', '🔮', '😅', '🎪', '🧠', '🎲', '💬', '🤔'];
+const ICON_POSITIONS = [
+  [20, 40], [180, 20], [320, 80], [60, 200], [260, 160], [140, 320], [340, 260],
+  [30, 380], [200, 400], [380, 360], [100, 500], [290, 480], [50, 580], [320, 540],
+];
+
+const BackgroundTexture = () => (
+  <div className="bg-texture pointer-events-none">
+    {ICON_POSITIONS.map(([x, y], i) => (
+      <div 
+        key={i} 
+        className="bg-icon select-none"
+        style={{ left: `${x}px`, top: `${y}px` }}
+      >
+        {BG_ICONS[i % BG_ICONS.length]}
+      </div>
+    ))}
   </div>
 );
 
@@ -50,16 +58,11 @@ const GameCoordinator = () => {
   const activeScreen = localScreen || gameState.status;
 
   if (!ggChecked) {
-    return <div className="h-screen w-full bg-[#0a0b10]" />;
+    return <div className="h-screen w-full bg-[#EDEAE4]" />;
   }
 
-  // Restriction disabled: allow direct access without GummyGum launch session
-  // if (!ggSession) {
-  //   return <GummyGumLockedScreen />;
-  // }
-
   if (ggSession?.roomCode && activeScreen === 'home') {
-    return <div className="h-screen w-full bg-[#0a0b10]" />;
+    return <div className="h-screen w-full bg-[#EDEAE4]" />;
   }
 
   const renderScreen = () => {
@@ -77,17 +80,14 @@ const GameCoordinator = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-[#0a0b10] text-white font-inter overflow-hidden relative selection:bg-amber/30 flex">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-amber/20 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-glowPulse"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-coral/20 rounded-full mix-blend-screen filter blur-[120px] opacity-40 animate-glowPulse" style={{ animationDelay: '1.5s' }}></div>
-      </div>
-      
+    <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter overflow-hidden relative flex">
+      {/* Background icons texture */}
+      <BackgroundTexture />
+
       {activeScreen !== 'home' && <DesktopSidebar />}
 
-      {/* Content wrapper with fade transition */}
-      <div className="relative h-full flex-1 w-full animate-fadeUp z-10" key={activeScreen}>
+      {/* Content wrapper with smooth animation */}
+      <div className="relative h-full flex-1 w-full animate-fadeUp z-10 overflow-hidden" key={activeScreen}>
         {renderScreen()}
       </div>
     </div>
