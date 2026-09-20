@@ -12,10 +12,6 @@ export function getGummyGumSession() {
   }
 }
 
-// Resolves the GummyGum hub launch token (?ggt=...) into a session, if present.
-// A single verify attempt (network error or a non-success response) — the
-// hub's launch token is safe to re-verify, so callers get one automatic
-// retry before giving up.
 async function verifyLaunchTokenOnce(ggt) {
   try {
     const res = await fetch(`${API_URL}/api/gummygum/launch/verify`, {
@@ -40,12 +36,6 @@ export async function resolveGummyGumLaunch() {
     return getGummyGumSession();
   }
 
-  // The host's tab (opened via window.open from GummyGum) can take a
-  // moment to become the browser's active tab and start executing at full
-  // speed — a newly opened tab is sometimes backgrounded/throttled before
-  // it's foregrounded, which can delay this call past a transient network
-  // hiccup. One retry after a short delay lets a transient miss self-heal
-  // instead of permanently falling back to this experience's native screen.
   let body = await verifyLaunchTokenOnce(ggt);
   if (!body) {
     await new Promise((resolve) => setTimeout(resolve, 1500));
