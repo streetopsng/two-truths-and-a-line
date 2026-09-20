@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { GameProvider, useGame } from './context/GameContext';
 import { Button } from './components/ui/Button';
@@ -81,6 +81,37 @@ const GummyGumLockedScreen = () => (
   </div>
 );
 
+// Participant-side landing when GummyGum cancels/ends the session out from
+// under them (the room doc disappears while they're not the host). Mirrors
+// the close-tab-then-fallback-message pattern used on the leaderboard exit
+// flow — attempt to close the tab, and only show a message if that failed.
+const GummyGumCancelledScreen = () => {
+  const [showMessage, setShowMessage] = useState(false);
+
+  useEffect(() => {
+    window.close();
+    const t = setTimeout(() => setShowMessage(true), 400);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!showMessage) {
+    return <div className="h-screen w-full bg-[#EDEAE4]" />;
+  }
+
+  return (
+    <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex items-center justify-center px-6 relative">
+      <BackgroundTexture />
+      <div className="card max-w-sm w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] relative z-10">
+        <div className="text-4xl">👋</div>
+        <h1 className="text-xl font-black">Session ended</h1>
+        <p className="text-[#555] text-sm leading-relaxed">
+          This session was cancelled by the host. You can close this tab now.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const GameCoordinator = () => {
   const { gameState, ggSession, ggChecked, createGame } = useGame();
   const routedRef = React.useRef(false);
@@ -98,6 +129,13 @@ const GameCoordinator = () => {
 
   if (!ggChecked) {
     return <div className="h-screen w-full bg-[#EDEAE4]" />;
+  }
+
+  // GummyGum-launched participant whose room just disappeared (host cancelled
+  // from the hub). The host's own branch never reaches this state — it's
+  // redirected straight back to GummyGum by the listener that sets this.
+  if (gameState.status === 'gg-cancelled') {
+    return <GummyGumCancelledScreen />;
   }
 
   if (!ggSession) {

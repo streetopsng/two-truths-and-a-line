@@ -18,6 +18,7 @@ import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import {
   resolveGummyGumLaunch,
   reportGummyGumResult,
+  returnToGummyGum,
 } from "../lib/gummygumSession";
 import {
   authReady as authReadyPromise,
@@ -130,7 +131,16 @@ export const GameProvider = ({ children }) => {
         } else {
           localStorage.removeItem("gameCode");
           setGameCode("");
-          setGameState({ status: "home" });
+          if (ggSession?.isHost) {
+            // GummyGum is the source of the cancellation here, so the hub
+            // already knows the session ended — just redirect, don't
+            // re-hit the close endpoint.
+            returnToGummyGum();
+          } else if (ggSession) {
+            setGameState({ status: "gg-cancelled" });
+          } else {
+            setGameState({ status: "home" });
+          }
         }
       },
       (error) => {
@@ -139,7 +149,7 @@ export const GameProvider = ({ children }) => {
     );
 
     return unsub;
-  }, [currentUser, gameCode]);
+  }, [currentUser, gameCode, ggSession]);
 
   // 3. Report the launching host's final result back to the GummyGum hub
   useEffect(() => {
