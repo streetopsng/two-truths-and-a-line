@@ -2,6 +2,17 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Host Spectator Flow', () => {
   test('host sets the game up and spectates while bots play', async ({ page }) => {
+    // Simulate launch session from GummyGum hub
+    await page.addInitScript(() => {
+      sessionStorage.setItem('gummygum_launch_session', JSON.stringify({
+        sessionId: 'test_session',
+        experienceId: 'two-truths-and-a-line',
+        isHost: true,
+        player: { name: 'Host' },
+        hubUrl: 'http://localhost:5199',
+      }));
+    });
+
     // 1. Home
     await page.goto('/');
     await expect(page.getByText('2 Truths &')).toBeVisible();

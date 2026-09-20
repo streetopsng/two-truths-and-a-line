@@ -6,7 +6,7 @@ import { Button } from '../ui/Button';
 const MAX_SETS = 3;
 const emptySet = () => ({ statements: ['', '', ''], lieIndex: -1 });
 
-export const SubmitScreen = () => {
+export const SubmitScreen = ({ onSubmitted }) => {
   const { submitStatements } = useGame();
   const navigate = useNavigate();
   const [sets, setSets] = useState([emptySet()]);
@@ -20,6 +20,12 @@ export const SubmitScreen = () => {
     )));
   };
 
+  const updateLieIndex = (setIdx, lieIdx) => {
+    setSets(prev => prev.map((s, i) => (
+      i === setIdx ? { ...s, lieIndex: lieIdx } : s
+    )));
+  };
+
   const addSet = () => setSets(prev => (prev.length < MAX_SETS ? [...prev, emptySet()] : prev));
   const removeSet = (setIdx) => setSets(prev => prev.filter((_, i) => i !== setIdx));
 
@@ -27,112 +33,122 @@ export const SubmitScreen = () => {
     for (let i = 0; i < sets.length; i++) {
       const s = sets[i];
       if (s.statements.some(st => !st.trim())) {
-        setError(`Set ${i + 1}: fill in all 3 statements first.`);
+        setError(sets.length > 1 ? `Set ${i + 1}: fill in all 3 statements first.` : 'Fill in all 3 statements first.');
         return;
       }
       if (s.lieIndex === -1) {
-        setError(`Set ${i + 1}: mark which one is the lie 🤫`);
+        setError(sets.length > 1 ? `Set ${i + 1}: mark which one is the lie 🤫` : 'Mark which one is the lie 🤫');
         return;
       }
     }
     setError('');
     await submitStatements(sets);
-    navigate('/submit/wait');
+    if (onSubmitted) {
+      onSubmitted();
+    } else {
+      navigate('/submit/wait');
+    }
   };
 
   return (
-    <div className="flex flex-col h-full max-w-[430px] md:max-w-none w-full mx-auto relative z-10 md:justify-center md:items-center">
-      <div className="pt-8 md:pt-0 px-[22px] flex items-center gap-3 shrink-0 md:w-full md:max-w-5xl md:mb-6">
-        <div>
-          <div className="text-[10px] tracking-[3px] uppercase text-white/50 font-bold">
-            Your turn to confess
-          </div>
-          <div className="text-2xl md:text-4xl font-black mt-1 tracking-tight">
-            Write your statements
-          </div>
+    <div className="flex flex-col h-full max-w-[430px] md:max-w-[500px] w-full mx-auto relative z-10 p-4 sm:p-6 justify-between animate-fadeUp">
+      <div className="shrink-0 pt-2 pb-2">
+        <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#F5821F]">
+          2 Truths & a Lie
         </div>
+        <h2 className="text-[26px] font-black text-[#1A1A1A] mt-0.5 tracking-tight">
+          Write your statements
+        </h2>
+        <p className="text-[13px] text-[#555] leading-[1.55] mt-1">
+          Write 2 things that are true about you and 1 that's a lie. Mark the lie — nobody sees which one until the reveal.
+        </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 px-[22px] pt-6 md:pt-0 pb-2 md:w-full md:max-w-5xl">
-        <p className="text-[14px] md:text-[16px] text-white/70 font-medium leading-[1.6] mb-3 max-w-2xl">
-          Write 2 things that are true about you and 1 that is a lie, then mark the lie. Nobody sees which one it is until the reveal.
-        </p>
-        <div className="text-xs md:text-[14px] text-amber font-medium italic mb-6 opacity-80">
-          🤫 Optional: add up to 3 sets — you'll be in the hot seat once for each one.
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {sets.map((set, i) => (
-            <div
-              key={i}
-              className="rounded-2xl p-4 md:p-5 border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] relative"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className={`text-[10px] font-extrabold tracking-[2px] uppercase ${i === 0 ? 'text-amber/80' : 'text-white/40'}`}>
-                  Set {i + 1}{i === 0 ? ' · required' : ' · optional'}
-                </div>
-                {i > 0 && (
+      <div className="flex-1 overflow-y-auto my-2 space-y-4 pr-1">
+        {sets.map((set, setIdx) => (
+          <div key={setIdx} className="space-y-3">
+            {sets.length > 1 && (
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#F5821F]">
+                  Set {setIdx + 1}
+                </span>
+                {setIdx > 0 && (
                   <button
-                    onClick={() => removeSet(i)}
-                    className="text-[11px] font-bold text-white/30 hover:text-red transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-red/10"
+                    onClick={() => removeSet(setIdx)}
+                    className="text-[11px] font-bold text-[#E8334A] hover:underline cursor-pointer"
                   >
                     ✕ Remove
                   </button>
                 )}
               </div>
+            )}
 
-              {set.statements.map((stmt, j) => (
-                <div key={j} className="mb-3">
+            {[0, 1, 2].map(i => {
+              const isLie = set.lieIndex === i;
+              return (
+                <div 
+                  key={i}
+                  className={`rounded-[16px] p-4 transition-all duration-200 border-[1.5px] ${
+                    isLie 
+                      ? 'bg-white border-[#F5821F] shadow-[0_3px_0_#E8710A]' 
+                      : 'bg-[#FAF7F2] border-[#E0DBD4] shadow-[0_3px_0_#E0DBD4]'
+                  }`}
+                >
+                  <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#999] mb-1.5">
+                    Statement {i + 1}
+                  </div>
                   <textarea
-                    className="w-full bg-black/30 border border-white/10 rounded-xl text-white text-[15px] font-medium py-2.5 px-3 focus:outline-none focus:border-amber/50 resize-none leading-[1.5] placeholder:text-white/20 transition-colors"
+                    className="w-full bg-transparent border-b-[1.5px] border-[#E0DBD4] text-[#1A1A1A] text-[15px] font-medium py-1.5 focus:outline-none focus:border-[#F5821F] resize-none leading-[1.4] placeholder:text-[#bbb]"
                     rows={2}
-                    placeholder={j === 2 ? 'This one could be the lie...' : 'Tell them something true...'}
+                    placeholder={i === 2 ? "This one could be the lie..." : "Tell them something true..."}
                     maxLength={120}
-                    value={stmt}
-                    onChange={(e) => updateStatement(i, j, e.target.value)}
+                    value={set.statements[i]}
+                    onChange={(e) => updateStatement(setIdx, i, e.target.value)}
                   />
-                  <div className="text-[10px] text-white/30 text-right mt-1 font-medium">
-                    {stmt.length} / 120
+                  <div className="text-[10px] text-[#999] text-right mt-1 font-medium">
+                    {set.statements[i].length} / 120
+                  </div>
+
+                  <div 
+                    className="flex items-center gap-2 mt-2.5 cursor-pointer w-fit select-none"
+                    onClick={() => updateLieIndex(setIdx, i)}
+                  >
+                    <div className={`w-5 h-5 rounded-[5px] border-2 flex items-center justify-center transition-all ${
+                      isLie 
+                        ? 'bg-[#F5821F] border-[#F5821F] text-white font-black text-xs' 
+                        : 'bg-white border-[#E0DBD4]'
+                    }`}>
+                      {isLie && '✓'}
+                    </div>
+                    <div className={`text-[12px] font-bold ${isLie ? 'text-[#E8710A]' : 'text-[#555]'}`}>
+                      This is the lie 🤫
+                    </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
+          </div>
+        ))}
 
-              <div className="flex items-center gap-2 mt-4 flex-wrap">
-                <span className="text-[11px] font-extrabold tracking-[1px] uppercase text-white/40 mr-1">
-                  The lie is:
-                </span>
-                {set.statements.map((_, j) => (
-                  <button
-                    key={j}
-                    onClick={() => setSets(prev => prev.map((s, si) => (si === i ? { ...s, lieIndex: j } : s)))}
-                    className={`px-3.5 py-1.5 rounded-full text-[12px] font-bold border transition-all cursor-pointer ${
-                      set.lieIndex === j
-                        ? 'bg-coral border-coral text-white shadow-[0_0_12px_rgba(255,92,56,0.5)]'
-                        : 'bg-black/20 border-white/15 text-white/40 hover:border-white/40 hover:text-white/70'
-                    }`}
-                  >
-                    Statement {j + 1}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {sets.length < MAX_SETS && (
-            <button
-              onClick={addSet}
-              className="w-full py-3.5 rounded-2xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-amber/50 hover:bg-white/[0.03] text-[13px] font-bold tracking-wide transition-all cursor-pointer backdrop-blur-md"
-            >
-              ＋ Add another 2 truths &amp; a lie ({sets.length}/{MAX_SETS})
-            </button>
-          )}
-        </div>
+        {sets.length < MAX_SETS && (
+          <button
+            type="button"
+            onClick={addSet}
+            className="w-full py-2.5 rounded-xl border border-dashed border-[#E0DBD4] bg-white/60 hover:bg-white text-[13px] font-bold text-[#F5821F] transition-all cursor-pointer shadow-sm"
+          >
+            + Add another set (optional)
+          </button>
+        )}
       </div>
 
-      <div className="p-6 md:p-8 bg-black/20 backdrop-blur-xl border-t border-white/10 shrink-0 flex flex-col gap-2 rounded-t-2xl md:rounded-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:w-full md:max-w-md md:mt-8 md:mb-6">
-        <div className="text-xs text-red text-center min-h-[16px] font-medium">{error}</div>
-        <Button variant="coral" onClick={handleSubmit}>
-          Lock in {sets.length > 1 ? `all ${sets.length} sets` : 'my statements'}
+      <div className="pt-2 shrink-0 flex flex-col gap-2">
+        {error && (
+          <div className="text-xs text-[#E8334A] font-bold text-center bg-[#FFF0EE] border border-[#E8334A]/20 py-2 rounded-lg">
+            {error}
+          </div>
+        )}
+        <Button onClick={handleSubmit} className="w-full">
+          Lock in my statements
         </Button>
       </div>
     </div>
