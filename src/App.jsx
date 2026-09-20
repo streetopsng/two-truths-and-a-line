@@ -100,9 +100,7 @@ const GameCoordinator = () => {
     return <div className="h-screen w-full bg-[#EDEAE4]" />;
   }
 
-  // Allow direct access during testing or mock mode, otherwise show locked screen
-  const isTestOrMock = typeof window !== 'undefined' && (Boolean(window.__MOCK_MODE__) || Boolean(window.navigator?.webdriver));
-  if (!ggSession && !isTestOrMock) {
+  if (!ggSession) {
     return <GummyGumLockedScreen />;
   }
 

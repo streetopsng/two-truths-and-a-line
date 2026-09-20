@@ -251,7 +251,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const createGame = async (playerName, presetCode) => {
-    if (!ggSession && !MOCK_MODE) {
+    if (!ggSession) {
       throw new Error(
         "This experience is only available through GummyGum. Head back to the hub to launch it.",
       );
@@ -367,7 +367,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const joinGame = async (code, playerName, avatarId = null) => {
-    if (!ggSession && !MOCK_MODE) {
+    if (!ggSession) {
       throw new Error(
         "This experience is only available through GummyGum. Head back to the hub to launch it.",
       );
