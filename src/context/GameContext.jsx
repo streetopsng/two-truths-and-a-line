@@ -6,7 +6,14 @@ import React, {
   useRef,
 } from "react";
 import { db, auth } from "../firebase/config";
-import { doc, onSnapshot, setDoc, updateDoc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  setDoc,
+  updateDoc,
+  getDoc,
+  deleteField,
+} from "firebase/firestore";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import {
   resolveGummyGumLaunch,
@@ -394,6 +401,35 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
+    // Re-clicking the GummyGum invite link can land in a fresh anon-auth
+    // session (different browser/webview), giving a new uid for the same
+    // person. Reclaim their existing entry by email instead of adding a
+    // duplicate, carrying over score/streak/submission state.
+    const ggEmail = ggSession?.player?.email
+      ? ggSession.player.email.toLowerCase().trim()
+      : null;
+    const staleEntry = ggEmail
+      ? Object.entries(data.players).find(
+          ([, p]) => p.email && p.email.toLowerCase() === ggEmail,
+        )
+      : null;
+
+    if (staleEntry) {
+      const [staleUid, stalePlayer] = staleEntry;
+      await updateDoc(gameRef, {
+        [`players.${user.uid}`]: {
+          ...stalePlayer,
+          name: playerName || stalePlayer.name,
+          avatarId: avatarId || stalePlayer.avatarId || null,
+          email: ggEmail,
+        },
+        [`players.${staleUid}`]: deleteField(),
+      });
+      localStorage.setItem("gameCode", code);
+      setGameCode(code);
+      return;
+    }
+
     const numPlayers = Object.keys(data.players).length;
     if (numPlayers >= 10) throw new Error("Game is full");
 
@@ -402,6 +438,7 @@ export const GameProvider = ({ children }) => {
         name: playerName,
         color: COLORS[numPlayers % COLORS.length],
         avatarId: avatarId || null,
+        email: ggEmail,
         score: 0,
         streak: 0,
         correctGuesses: 0,
