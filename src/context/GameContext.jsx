@@ -6,11 +6,19 @@ import React, {
   useRef,
 } from "react";
 import { db, auth } from "../firebase/config";
-import { doc, onSnapshot, setDoc, updateDoc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  setDoc,
+  updateDoc,
+  getDoc,
+  deleteField,
+} from "firebase/firestore";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import {
   resolveGummyGumLaunch,
   reportGummyGumResult,
+  returnToGummyGum,
 } from "../lib/gummygumSession";
 import {
   authReady as authReadyPromise,
@@ -34,13 +42,10 @@ const COLORS = [
   "#0ea5e9",
 ];
 
-// Mock mode: kicks in when Firebase keys are missing, when explicitly requested via env,
-// or during automated test execution.
+// Build-time only — never runtime-detectable, or anyone could bypass the gate.
 const MOCK_MODE =
   db.app.options.apiKey === "YOUR_API_KEY" ||
-  import.meta.env.VITE_MOCK_MODE === "true" ||
-  (typeof window !== "undefined" &&
-    (Boolean(window.__MOCK_MODE__) || Boolean(window.navigator?.webdriver)));
+  import.meta.env.VITE_MOCK_MODE === "true";
 
 export const GameProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -126,7 +131,16 @@ export const GameProvider = ({ children }) => {
         } else {
           localStorage.removeItem("gameCode");
           setGameCode("");
-          setGameState({ status: "home" });
+          if (ggSession?.isHost) {
+            // GummyGum is the source of the cancellation here, so the hub
+            // already knows the session ended — just redirect, don't
+            // re-hit the close endpoint.
+            returnToGummyGum();
+          } else if (ggSession) {
+            setGameState({ status: "gg-cancelled" });
+          } else {
+            setGameState({ status: "home" });
+          }
         }
       },
       (error) => {
@@ -135,7 +149,7 @@ export const GameProvider = ({ children }) => {
     );
 
     return unsub;
-  }, [currentUser, gameCode]);
+  }, [currentUser, gameCode, ggSession]);
 
   // 3. Report the launching host's final result back to the GummyGum hub
   useEffect(() => {
@@ -251,7 +265,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const createGame = async (playerName, presetCode) => {
-    if (!ggSession && !MOCK_MODE) {
+    if (!ggSession) {
       throw new Error(
         "This experience is only available through GummyGum. Head back to the hub to launch it.",
       );
@@ -367,7 +381,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const joinGame = async (code, playerName, avatarId = null) => {
-    if (!ggSession && !MOCK_MODE) {
+    if (!ggSession) {
       throw new Error(
         "This experience is only available through GummyGum. Head back to the hub to launch it.",
       );
@@ -397,6 +411,35 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
+    // Re-clicking the GummyGum invite link can land in a fresh anon-auth
+    // session (different browser/webview), giving a new uid for the same
+    // person. Reclaim their existing entry by email instead of adding a
+    // duplicate, carrying over score/streak/submission state.
+    const ggEmail = ggSession?.player?.email
+      ? ggSession.player.email.toLowerCase().trim()
+      : null;
+    const staleEntry = ggEmail
+      ? Object.entries(data.players).find(
+          ([, p]) => p.email && p.email.toLowerCase() === ggEmail,
+        )
+      : null;
+
+    if (staleEntry) {
+      const [staleUid, stalePlayer] = staleEntry;
+      await updateDoc(gameRef, {
+        [`players.${user.uid}`]: {
+          ...stalePlayer,
+          name: playerName || stalePlayer.name,
+          avatarId: avatarId || stalePlayer.avatarId || null,
+          email: ggEmail,
+        },
+        [`players.${staleUid}`]: deleteField(),
+      });
+      localStorage.setItem("gameCode", code);
+      setGameCode(code);
+      return;
+    }
+
     const numPlayers = Object.keys(data.players).length;
     if (numPlayers >= 10) throw new Error("Game is full");
 
@@ -405,6 +448,7 @@ export const GameProvider = ({ children }) => {
         name: playerName,
         color: COLORS[numPlayers % COLORS.length],
         avatarId: avatarId || null,
+        email: ggEmail,
         score: 0,
         streak: 0,
         correctGuesses: 0,
