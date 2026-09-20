@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../../context/GameContext';
 import { Button } from '../ui/Button';
 
-export const SubmitWaitScreen = ({ onBack }) => {
+export const SubmitWaitScreen = () => {
   const { gameState } = useGame();
+  const navigate = useNavigate();
   const { players } = gameState;
   const playersList = Object.values(players || {});
 
@@ -34,8 +36,8 @@ export const SubmitWaitScreen = ({ onBack }) => {
 
       <Button 
         variant="outline" 
-        className="mt-2 !w-auto !py-3 !px-6 !text-[13px]"
-        onClick={onBack}
+        className="mt-4 !w-auto !py-3 !px-6 !text-[13px]"
+        onClick={() => navigate('/lobby')}
       >
         ← Back to lobby
       </Button>

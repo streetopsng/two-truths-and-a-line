@@ -6,11 +6,29 @@ export const QuestionScreen = () => {
   const { gameState, currentUser, updateGameDoc } = useGame();
   const { currentRound, roundOrder, players, roundEndTime, votes, revealed, hostUid } = gameState;
   
-  const subjectUid = roundOrder?.[currentRound];
+  // Each round entry is { uid, setIndex } — one entry per statement set.
+  const roundEntry = roundOrder?.[currentRound];
+  const subjectUid = roundEntry?.uid;
+  const setIndex = roundEntry?.setIndex ?? 0;
   const subject = players?.[subjectUid];
+  const activeSet = subject?.statementSets?.[setIndex] || (subject?.statements ? { statements: subject.statements, lieIndex: subject.lieIndex } : null);
   const me = players?.[currentUser?.uid];
   const isMe = subjectUid === currentUser?.uid;
   const isHost = currentUser?.uid === hostUid;
+
+  // Host spectator data: live votes per statement, who still has to vote, and
+  // the running scoreboard. Players never see any of this — only the host does.
+  const votersByStatement = [0, 1, 2].map((idx) =>
+    Object.entries(votes || {})
+      .filter(([uid, choice]) => choice === idx && players?.[uid])
+      .map(([uid]) => ({ uid, ...players[uid] }))
+  );
+  const waitingOn = Object.entries(players || {})
+    .filter(([uid]) => uid !== subjectUid && votes?.[uid] === undefined)
+    .map(([, p]) => p.name);
+  const liveStandings = Object.entries(players || {})
+    .map(([uid, p]) => ({ uid, ...p }))
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
   
   const [timeLeft, setTimeLeft] = useState(30);
   const hasRevealedRef = useRef(false);
@@ -22,7 +40,6 @@ export const QuestionScreen = () => {
     }
   }, [revealed]);
 
-  // Sync Timer
   useEffect(() => {
     const calcTime = () => {
       if (!roundEndTime) return 30;
@@ -38,7 +55,6 @@ export const QuestionScreen = () => {
     return () => clearInterval(timer);
   }, [roundEndTime]);
 
-  // Trigger reveal when time is up or everyone voted
   useEffect(() => {
     if (!isHost || revealed || hasRevealedRef.current) return;
     
@@ -48,20 +64,19 @@ export const QuestionScreen = () => {
 
     if (timeLeft === 0 || allVoted) {
       hasRevealedRef.current = true;
-      handleReveal();
+      handleReveal().catch((err) => console.error('handleReveal failed:', err));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, votes, players, isHost, revealed]);
 
   const handleVote = async (idx) => {
-    if (revealed || isMe) return;
+    if (revealed || isMe || isHost) return;
     await updateGameDoc({
       [`votes.${currentUser.uid}`]: idx
     });
   };
 
   const handleReveal = async () => {
-    // Calculate points
     const voters = Object.keys(players || {}).filter(uid => uid !== subjectUid);
     const updates = { revealed: true };
     
@@ -69,7 +84,7 @@ export const QuestionScreen = () => {
     
     voters.forEach(vUid => {
       const chosen = votes?.[vUid];
-      const correct = chosen === subject.lieIndex;
+      const correct = chosen === activeSet.lieIndex;
       const vPlayer = players[vUid];
       const fast = correct && (timeLeft >= 20);
       
@@ -110,7 +125,7 @@ export const QuestionScreen = () => {
     }, 3000);
   };
 
-  if (!subject) return null;
+  if (!subject || !activeSet) return null;
 
   const myVote = votes?.[currentUser?.uid];
   const votesCast = Object.keys(votes || {}).length;
@@ -143,8 +158,10 @@ export const QuestionScreen = () => {
           </div>
         </div>
         <div className="bg-white border-[1.5px] border-[#E0DBD4] rounded-[10px] p-2 text-center shadow-[0_2px_0_#E0DBD4]">
-          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">🔥 Streak</div>
-          <div className="text-[18px] font-black text-[#E8710A] leading-none">{me?.streak || 0}</div>
+          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">{isHost ? 'Role' : '🔥 Streak'}</div>
+          <div className={`text-[18px] font-black leading-none ${isHost ? 'text-[#F5821F] text-[13px]' : 'text-[#E8710A]'}`}>
+            {isHost ? '👁 Host' : (me?.streak || 0)}
+          </div>
         </div>
         <div className="bg-white border-[1.5px] border-[#E0DBD4] rounded-[10px] p-2 text-center shadow-[0_2px_0_#E0DBD4]">
           <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">📍 Round</div>
@@ -162,7 +179,7 @@ export const QuestionScreen = () => {
 
       {/* Subject card */}
       <div className="card p-3.5 mt-3 bg-white border-[1.5px] border-[#E0DBD4] rounded-[16px] shadow-[0_3px_0_#E0DBD4] flex items-center gap-3 shrink-0">
-        <PlayerAvatar name={subject.name} color={subject.color} size="lg" />
+        <PlayerAvatar name={subject.name} color={subject.color} avatarId={subject.avatarId} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="text-[16px] font-black text-[#1A1A1A] truncate">
             {subject.name} {isMe ? <span className="text-[#F5821F] text-xs font-bold">(you)</span> : ''}
@@ -193,9 +210,10 @@ export const QuestionScreen = () => {
         </div>
       ) : (
         <div className="flex-1 flex flex-col justify-center gap-3 my-3">
-          {subject.statements.map((stmt, i) => {
-            const isLie = subject.lieIndex === i;
+          {activeSet.statements.map((stmt, i) => {
+            const isLie = activeSet.lieIndex === i;
             const amISelected = myVote === i;
+            const statementVoters = votersByStatement[i];
             const numVotes = Object.values(votes || {}).filter(v => v === i).length;
 
             let cardStyle = 'bg-white border-[#E0DBD4] shadow-[0_3px_0_#E0DBD4] hover:border-[#F5821F] hover:shadow-[0_3px_0_#E8710A]';
@@ -210,21 +228,42 @@ export const QuestionScreen = () => {
             return (
               <button
                 key={i}
-                disabled={revealed || isMe}
+                disabled={revealed || isMe || isHost}
                 onClick={() => handleVote(i)}
-                className={`relative rounded-[16px] p-4 text-left border-[2px] transition-all duration-150 cursor-pointer ${cardStyle}`}
+                className={`relative rounded-[16px] p-4 text-left border-[2px] transition-all duration-150 ${
+                  revealed || isMe || isHost ? 'cursor-default' : 'cursor-pointer'
+                } ${cardStyle}`}
               >
-                <div className={`text-[10px] font-extrabold tracking-[2px] uppercase mb-1 ${
-                  revealed 
-                    ? (isLie ? 'text-[#E8334A]' : 'text-[#22A855]') 
-                    : (amISelected ? 'text-[#E8710A]' : 'text-[#999]')
-                }`}>
-                  Statement {i + 1}
+                <div className="flex items-center justify-between">
+                  <div className={`text-[10px] font-extrabold tracking-[2px] uppercase mb-1 ${
+                    revealed 
+                      ? (isLie ? 'text-[#E8334A]' : 'text-[#22A855]') 
+                      : (amISelected ? 'text-[#E8710A]' : 'text-[#999]')
+                  }`}>
+                    Statement {i + 1}
+                  </div>
+                  {(revealed || isHost) && (
+                    <div className={`text-[11px] font-bold ${revealed ? (isLie ? 'text-[#E8334A]' : 'text-[#777]') : 'text-[#999]'}`}>
+                      {numVotes} {numVotes === 1 ? 'vote' : 'votes'}
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-[14px] font-semibold text-[#1A1A1A] leading-[1.45]">
                   {stmt}
                 </div>
+
+                {/* Host only: live tally of who voted */}
+                {isHost && statementVoters?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-[#E0DBD4]">
+                    {statementVoters.map((v) => (
+                      <div key={v.uid} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FAF7F2] border border-[#E0DBD4]">
+                        <PlayerAvatar name={v.name} color={v.color} avatarId={v.avatarId} size="sm" className="!w-4 !h-4 !text-[7px]" />
+                        <span className="text-[10px] font-bold text-[#555]">{v.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {revealed && (
                   <div className={`text-[11px] font-bold mt-2 ${isLie ? 'text-[#E8334A]' : 'text-[#22A855]'}`}>
@@ -243,10 +282,48 @@ export const QuestionScreen = () => {
         </div>
       )}
 
-      {/* Subtle footer indicator */}
-      <div className="text-[11px] text-[#999] text-center font-bold uppercase tracking-wider shrink-0 pb-1">
-        {revealed ? 'Revealing results...' : (isMe ? 'Host managing round' : (myVote !== undefined ? '✓ Vote submitted' : 'Pick the statement you think is the lie'))}
-      </div>
+      {/* Host-only spectator panel: live scoreboard + who still has to vote */}
+      {isHost ? (
+        <div className="mt-2 mb-2 w-full rounded-[16px] border-[1.5px] border-[#E0DBD4] bg-white p-4 shadow-[0_3px_0_#E0DBD4] shrink-0">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-2.5">
+            <div className="text-[10px] tracking-[2px] uppercase text-[#999] font-black">
+              Live scores
+            </div>
+            {!revealed && (waitingOn.length > 0
+              ? <div className="text-[11px] text-[#E8710A] font-bold tracking-wide truncate max-w-[65%]">⏳ Waiting on: {waitingOn.join(', ')}</div>
+              : <div className="text-[11px] text-[#22A855] font-bold tracking-wide">✓ All votes in — revealing…</div>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto">
+            {liveStandings.map((p) => {
+              const hasVoted = p.uid !== subjectUid && votes?.[p.uid] !== undefined;
+              return (
+                <div key={p.uid} className="flex items-center gap-2.5 p-2 rounded-[10px] bg-[#FAF7F2] border border-[#E0DBD4]">
+                  <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
+                  <div className="flex-1 text-[13px] font-bold text-[#1A1A1A] truncate">
+                    {p.name}
+                    {p.uid === subjectUid && <span className="text-[#999] font-medium ml-1.5 text-xs">(in the hot seat)</span>}
+                  </div>
+                  <div className="text-[10px] font-bold uppercase tracking-wide w-16 text-right whitespace-nowrap">
+                    {p.uid === subjectUid
+                      ? <span className="text-[#999]">hot seat</span>
+                      : hasVoted
+                        ? <span className="text-[#22A855]">✓ voted</span>
+                        : <span className="text-[#E8710A]">voting…</span>}
+                  </div>
+                  <div className="text-[15px] font-black text-[#F5821F] w-10 text-right">
+                    {Math.round(p.score || 0)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="text-[11px] text-[#999] text-center font-bold uppercase tracking-wider shrink-0 pb-1">
+          {revealed ? 'Revealing results...' : (isMe ? 'Host managing round' : (myVote !== undefined ? '✓ Vote submitted' : 'Pick the statement you think is the lie'))}
+        </div>
+      )}
     </div>
   );
 };

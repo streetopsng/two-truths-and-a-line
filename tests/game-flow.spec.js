@@ -1,65 +1,41 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Game Flow', () => {
-  test('single player flow with mock bots', async ({ page }) => {
-    // 1. Navigate to home
+test.describe('Host Spectator Flow', () => {
+  test('host sets the game up and spectates while bots play', async ({ page }) => {
+    // 1. Home
     await page.goto('/');
-    
-    // Check title
     await expect(page.getByText('2 Truths &')).toBeVisible();
 
-    // 2. Click create game
+    // 2. Create a game — the host never gets a "write statements" step
     await page.getByRole('button', { name: 'Create a game' }).click();
+    await expect(page.getByText("You're hosting")).toBeVisible();
+    await expect(page.getByRole('button', { name: /Write my statements/i })).toHaveCount(0);
 
-    // 3. We are in the lobby, click write my statements
-    await expect(page.getByText("You're in the Lobby")).toBeVisible();
-    await page.getByRole('button', { name: 'Write my statements' }).click();
+    // 3. Mock bots are pre-submitted, so the host can start immediately
+    const startButton = page.getByRole('button', { name: 'Start game' });
+    await expect(startButton).toBeEnabled();
+    await startButton.click();
 
-    // 4. Fill in statements
-    await expect(page.getByText('Write your statements')).toBeVisible();
-    
-    // Fill textareas
-    const textareas = page.locator('textarea');
-    await expect(textareas).toHaveCount(3);
-    await textareas.nth(0).fill('I am a statement 1');
-    await textareas.nth(1).fill('I am a statement 2');
-    await textareas.nth(2).fill('I am a statement 3');
+    // 4. Question round — the host spectates: live scoreboard is visible and
+    //    every statement card is disabled (hosts don't vote)
+    await expect(page.getByText(/Round 1 of/).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Live scores')).toBeVisible();
+    const statementCards = page.locator('button', { hasText: 'Statement' });
+    await expect(statementCards).toHaveCount(3);
+    await expect(statementCards.first()).toBeDisabled();
 
-    // Pick lie (Statement 2)
-    const lieChecks = page.getByText('This is the lie');
-    await lieChecks.nth(1).click();
+    // 5. Bots vote after ~5s, which triggers the host-side reveal
+    await expect(page.getByText('THE LIE', { exact: true })).toBeVisible({ timeout: 15000 });
 
-    // Lock in
-    await page.getByRole('button', { name: 'Lock in my statements' }).click();
+    // 6. Reveal leads to the reaction screen; the host skips the bot's reaction
+    await expect(page.getByText(/Waiting for .*'s reaction/)).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: 'Skip waiting (Host)' }).click();
 
-    // Wait screen should appear after submission
-    await expect(page.getByText("You're in.")).toBeVisible();
-
-    // Click back to lobby to see the Start Game button
-    await page.getByRole('button', { name: '← Back to lobby' }).click();
-
-    // In mock mode, bots auto-submit so we instantly see "✓ Statements submitted" in Lobby
-    await expect(page.getByRole('button', { name: '✓ Statements submitted' })).toBeVisible();
-
-    // 5. Start game
-    await page.getByRole('button', { name: 'Start game' }).click();
-
-    // 6. Verify Question Screen starts
-    // Either it's our turn or a bot's turn. 
-    // The screen says either "Which one is the lie?" or "It's your round!"
-    const questionText = page.getByText(/Which one is the lie\?|It's your round!/);
-    await expect(questionText).toBeVisible({ timeout: 10000 });
-
-    // For full automated flow, we could script answering, but since order is random,
-    // we would need conditionals. For a basic test, verifying we reached the question screen is sufficient.
-    // Let's check that the timer is counting down or the round indicator is visible.
-    await expect(page.getByText(/Round 1 of/).first()).toBeVisible();
-    
-    // To ensure the game doesn't crash on reveal, let's wait a bit. 
-    // The mock mode auto-votes for bots after 5 seconds.
-    // If it's our turn, bots vote and we can't do anything until reveal.
-    // If it's a bot's turn, we must vote to trigger reveal early, or wait 30s.
-    
-    // We'll just verify the test reaches the question screen successfully for now.
+    // 7. Host controls the flow between rounds
+    await expect(page.getByText(/That was/)).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: 'Next round →' }).click();
+    await expect(page.getByText(/Round 2 of/).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Live scores')).toBeVisible();
   });
 });
+

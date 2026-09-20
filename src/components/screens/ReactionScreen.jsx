@@ -6,7 +6,7 @@ export const ReactionScreen = () => {
   const { currentRound, roundOrder, players, roundBonus, totalVoters, fooled, hostUid } = gameState;
   const [picked, setPicked] = useState(null);
 
-  const subjectUid = roundOrder?.[currentRound];
+  const subjectUid = roundOrder?.[currentRound]?.uid;
   const subject = players?.[subjectUid];
   const isMe = subjectUid === currentUser?.uid;
   const isHost = currentUser?.uid === hostUid;
@@ -64,14 +64,14 @@ export const ReactionScreen = () => {
             Waiting for {subject?.name || 'player'}'s reaction...
           </div>
           <div className="text-[13px] text-[#777]">
-            They are reacting to the round reveal!
+            {subject?.name} banked <span className="text-[#E8710A] font-bold">+{roundBonus || 0} pts</span> for this round
           </div>
           {isHost && (
             <button 
               onClick={skipReaction}
               className="mt-4 text-[13px] font-bold text-[#E8710A] underline cursor-pointer hover:text-[#F5821F]"
             >
-              Skip waiting (Host) →
+              Skip waiting (Host)
             </button>
           )}
         </div>

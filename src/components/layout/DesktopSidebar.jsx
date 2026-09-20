@@ -9,24 +9,14 @@ export const DesktopSidebar = () => {
   if (status === 'home' || !gameCode) return null;
 
   const playersList = Object.values(players || {});
-  // Sort by score for most screens except lobby
   if (status !== 'lobby') {
     playersList.sort((a, b) => (b.score || 0) - (a.score || 0));
   }
-  
+
   const me = players?.[currentUser?.uid];
 
   return (
     <div className="hidden md:flex flex-col w-[300px] lg:w-[320px] shrink-0 border-r border-[#E0DBD4] bg-white/70 backdrop-blur-md h-full p-6 relative z-20 shadow-[2px_0_12px_rgba(0,0,0,0.03)]">
-      <div className="mb-6">
-        <div className="text-[10px] tracking-[2px] uppercase text-[#999] font-extrabold mb-1">
-          Game Code
-        </div>
-        <div className="text-[30px] font-black tracking-[6px] text-[#F5821F]">
-          {gameCode}
-        </div>
-      </div>
-
       {(status === 'question' || status === 'reaction' || status === 'leaderboard') && (
         <div className="mb-5 p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E0DBD4] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
           <div className="text-[10px] tracking-[2px] uppercase text-[#999] font-extrabold mb-0.5">
@@ -57,7 +47,7 @@ export const DesktopSidebar = () => {
                     : 'bg-white border-[#E0DBD4] shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
                 }`}
               >
-                <PlayerAvatar name={p.name} color={p.color} size="sm" />
+                <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className={`text-[13px] font-bold tracking-tight truncate ${isMeRow ? 'text-[#E8710A]' : 'text-[#1A1A1A]'}`}>
                     {p.name} {isMeRow && <span className="text-[#999] font-semibold text-xs ml-1">(you)</span>}

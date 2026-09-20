@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
+import { closeGummyGumSession, returnToGummyGum } from '../../lib/gummygumSession';
 
 export const EndScreen = () => {
-  const { gameState, leaveGame } = useGame();
+  const { gameState, leaveGame, ggSession } = useGame();
   const { players } = gameState;
   const [confetti, setConfetti] = useState([]);
   const [activeRxn, setActiveRxn] = useState(null);
@@ -30,15 +31,25 @@ export const EndScreen = () => {
     setTimeout(() => setActiveRxn(null), 300);
   };
 
+  const handleLeave = () => {
+    if (ggSession?.isHost) {
+      closeGummyGumSession();
+    } else if (ggSession) {
+      returnToGummyGum();
+    } else {
+      leaveGame();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full max-w-[430px] md:max-w-[500px] w-full mx-auto relative z-10 p-4 sm:p-6 justify-between animate-fadeUp overflow-hidden">
       {/* Top bar with leave button */}
       <div className="flex items-center justify-between pt-1 shrink-0 relative z-20">
         <button 
-          onClick={leaveGame}
-          className="text-[12px] font-extrabold uppercase tracking-wider text-[#555] hover:text-[#1A1A1A] cursor-pointer bg-white px-3 py-1.5 rounded-full border border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]"
+          onClick={handleLeave}
+          className="text-[12px] font-extrabold uppercase tracking-wider text-[#555] hover:text-[#1A1A1A] cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]"
         >
-          ← Leave game
+          {ggSession?.isHost ? '← End session' : '← Leave game'}
         </button>
         <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#E8710A]">
           Game Over
@@ -76,6 +87,7 @@ export const EndScreen = () => {
               <PlayerAvatar 
                 name={p.name} 
                 color={p.color} 
+                avatarId={p.avatarId}
                 className="animate-dropIn shadow-[0_4px_10px_rgba(0,0,0,0.1)]"
                 size={i === 1 ? 'lg' : 'md'}
               />
@@ -108,11 +120,11 @@ export const EndScreen = () => {
         </div>
         <div className="flex flex-col gap-1.5">
           {allPlayers.map((p, i) => (
-            <div key={i} className="flex items-center gap-2.5 py-2 px-2 border-b border-[#E0DBD4] last:border-b-0">
+            <div key={p.uid || i} className="flex items-center gap-2.5 py-2 px-2 border-b border-[#E0DBD4] last:border-b-0">
               <div className="w-5 font-black text-[#999] text-xs text-center">
                 {i + 1}
               </div>
-              <PlayerAvatar name={p.name} color={p.color} size="sm" />
+              <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
               <div className="flex-1 text-[13px] font-bold text-[#1A1A1A] truncate">
                 {p.name}
               </div>
@@ -138,6 +150,26 @@ export const EndScreen = () => {
           </button>
         ))}
       </div>
+
+      {ggSession && (
+        <div className="pt-2 flex flex-col sm:flex-row gap-3 items-center justify-center z-10">
+          {ggSession.isHost ? (
+            <button
+              onClick={() => closeGummyGumSession()}
+              className="px-6 py-3 rounded-full bg-[#F5821F] hover:bg-[#E8710A] text-white font-extrabold text-[14px] transition-all cursor-pointer shadow-[0_3px_0_#c06412]"
+            >
+              Close Session & Return to GummyGum
+            </button>
+          ) : (
+            <button
+              onClick={() => returnToGummyGum()}
+              className="px-6 py-3 rounded-full bg-white hover:bg-[#FAF7F2] border border-[#E0DBD4] text-[#1A1A1A] font-bold text-[14px] transition-all cursor-pointer shadow-[0_2px_0_#E0DBD4]"
+            >
+              Return to GummyGum
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

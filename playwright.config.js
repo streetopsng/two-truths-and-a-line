@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5199',
     trace: 'on-first-retry',
   },
   projects: [
@@ -18,9 +18,13 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    // Dedicated port so Playwright never reuses a foreign dev server that may
+    // already be running on Vite's default port (5173).
+    command: 'npm run dev -- --port 5199 --strictPort',
+    url: 'http://localhost:5199',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    // Force deterministic mock mode (local bots, no Firestore) for e2e tests
+    env: { VITE_MOCK_MODE: 'true' },
   },
 });

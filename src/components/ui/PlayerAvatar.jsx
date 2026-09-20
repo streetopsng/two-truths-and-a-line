@@ -1,8 +1,7 @@
 import React from 'react';
+import { avatarUrl } from '../../lib/avatars';
 
-export const PlayerAvatar = ({ name, color, av, className = '', size = 'md' }) => {
-  // If an avatar emoji is provided, or if the name is an emoji, show it
-  // Otherwise show the first letter / initials
+export const PlayerAvatar = ({ name, color, avatarId, av, className = '', size = 'md' }) => {
   const isEmoji = (str) => str && /\p{Extended_Pictographic}/u.test(str);
   
   let content = '?';
@@ -20,6 +19,14 @@ export const PlayerAvatar = ({ name, color, av, className = '', size = 'md' }) =
     lg: 'w-11 h-11 text-xl',
     xl: 'w-16 h-16 text-3xl',
   };
+
+  if (avatarId) {
+    return (
+      <div className={`rounded-full overflow-hidden shrink-0 border-[1.5px] border-[#F5821F] bg-[#FDE8D0] shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${sizes[size] || sizes.md} ${className}`}>
+        <img src={avatarUrl(avatarId)} alt={name || 'Player avatar'} className="rounded-full object-cover w-full h-full" />
+      </div>
+    );
+  }
 
   return (
     <div 
