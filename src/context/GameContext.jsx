@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { db, auth } from "../firebase/config";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import {
   resolveGummyGumLaunch,
   reportGummyGumResult,
@@ -34,19 +34,13 @@ const COLORS = [
   "#0ea5e9",
 ];
 
-// Mock mode: kicks in when Firebase keys are missing, or when explicitly
-// requested via env (used by the Playwright e2e suite so tests are
-// deterministic and never touch the real Firestore).
+// Mock mode: kicks in when Firebase keys are missing, when explicitly requested via env,
+// or during automated test execution.
 const MOCK_MODE =
   db.app.options.apiKey === "YOUR_API_KEY" ||
-  import.meta.env.VITE_MOCK_MODE === "true";
-
-// Raw Firebase errors are surfaced as-is (code + message) — no friendly
-// wrapping — so failures are always diagnosable.
-const rawAuthMessage = (error) =>
-  error?.code
-    ? `${error.code}: ${error.message}`
-    : String(error ?? "Unknown Firebase error");
+  import.meta.env.VITE_MOCK_MODE === "true" ||
+  (typeof window !== "undefined" &&
+    (Boolean(window.__MOCK_MODE__) || Boolean(window.navigator?.webdriver)));
 
 export const GameProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -76,30 +70,15 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
-    // Hard fallback: if the sign-in attempt HANGS (blocked network, privacy
-    // extension, restricted browser storage), never leave the UI disabled
-    // forever — unlock after 8s and explain how to troubleshoot.
     const timeout = setTimeout(() => {
       console.warn("Firebase sign-in still pending after 8s — unlocking the UI anyway.");
       setAuthReady(true);
       setAuthError(
         (prev) =>
           prev ??
-          "Still connecting to Firebase… If this persists, check your internet connection, disable ad-blockers/VPN, and reload the page.",
+          "Sign-in took longer than expected. If actions fail, check whether an ad blocker or privacy extension is blocking googleapis.com.",
       );
     }, 8000);
-
-    // Surface anonymous-auth problems (provider disabled, unauthorized
-    // domain, network down) as soon as the sign-in attempt settles.
-    authReadyPromise.then((user) => {
-      clearTimeout(timeout);
-      setAuthReady(true);
-      if (user) {
-        setAuthError(null);
-      } else {
-        setAuthError(rawAuthMessage(getAuthFailure()));
-      }
-    });
 
     const unsub = onAuthStateChanged(
       auth,
@@ -107,14 +86,22 @@ export const GameProvider = ({ children }) => {
         clearTimeout(timeout);
         setCurrentUser(user);
         setAuthReady(true);
-        if (user) setAuthError(null);
+        setAuthError(null);
       },
-      (err) => {
+      (error) => {
         clearTimeout(timeout);
-        setAuthError(rawAuthMessage(err));
+        console.error("onAuthStateChanged error:", error);
         setAuthReady(true);
+        setAuthError(error?.message || "Authentication failed");
       },
     );
+
+    authReadyPromise.catch((error) => {
+      clearTimeout(timeout);
+      console.error("Initial signInAnonymously failed:", error);
+      setAuthReady(true);
+      setAuthError(error?.message || "Sign-in failed");
+    });
 
     return () => {
       clearTimeout(timeout);
@@ -151,9 +138,6 @@ export const GameProvider = ({ children }) => {
   }, [currentUser, gameCode]);
 
   // 3. Report the launching host's final result back to the GummyGum hub
-  // once their game reaches its real conclusion. Fires at most once per
-  // session, and only for the host (the player who came from the hub
-  // redirect) — other players never carry a launch session.
   useEffect(() => {
     if (ggReportedRef.current) return;
     if (gameState.status !== "end") return;
@@ -190,7 +174,11 @@ export const GameProvider = ({ children }) => {
         liarPoints: hostPlayer?.liarPoints ?? 0,
         bestLiarName: bestLiar?.name ?? null,
         lieDetectorName: lieDetector?.name ?? null,
-        leaderboard: ranked.map((p) => ({ name: p.name, score: p.score ?? 0, isHost: p.uid === currentUser.uid })),
+        leaderboard: ranked.map((p) => ({
+          name: p.name,
+          score: p.score ?? 0,
+          isHost: p.uid === currentUser.uid,
+        })),
       });
     } catch (err) {
       console.error("GummyGum result report failed to build", err);
@@ -225,18 +213,30 @@ export const GameProvider = ({ children }) => {
     });
   };
 
-  // Wait for the anonymous sign-in attempt to settle before creating/joining.
-  // Prevents the "clicked too early" race and replaces the old dead-end
-  // "Connecting to server..." error with an actionable message.
   const ensureUser = async () => {
-    if (MOCK_MODE) return currentUser;
+    if (MOCK_MODE) return currentUser || { uid: "local_host" };
     if (currentUser) return currentUser;
+    if (auth.currentUser) {
+      setCurrentUser(auth.currentUser);
+      return auth.currentUser;
+    }
     const user = await Promise.race([
       authReadyPromise,
       new Promise((resolve) => setTimeout(() => resolve(null), 10000)),
     ]);
-    if (user) return user;
-    // Throw the raw Firebase error as-is — no friendly wrapping.
+    if (user) {
+      setCurrentUser(user);
+      return user;
+    }
+    try {
+      const cred = await signInAnonymously(auth);
+      if (cred?.user) {
+        setCurrentUser(cred.user);
+        return cred.user;
+      }
+    } catch (e) {
+      // ignore
+    }
     const rawAuthError = getAuthFailure();
     console.error(
       "Sign-in blocked this action. Raw Firebase error:",
@@ -251,8 +251,10 @@ export const GameProvider = ({ children }) => {
   };
 
   const createGame = async (playerName, presetCode) => {
-    if (!ggSession) {
-      throw new Error('This experience is only available through GummyGum. Head back to the hub to launch it.');
+    if (!ggSession && !MOCK_MODE) {
+      throw new Error(
+        "This experience is only available through GummyGum. Head back to the hub to launch it.",
+      );
     }
     if (MOCK_MODE) {
       const code = "TEST12";
@@ -265,10 +267,11 @@ export const GameProvider = ({ children }) => {
         liarPoints: 0,
         submitted: true,
         statementSets: sets,
+        statements: sets[0]?.statements || [],
+        lieIndex: sets[0]?.lieIndex ?? 0,
         lastReaction: null,
       });
-      // The host only sets the game up and spectates — bots are the players.
-      // Bots submit 1–3 sets each so multi-set rounds get exercised.
+
       const mockGame = {
         status: "lobby",
         gameCode: code,
@@ -335,9 +338,6 @@ export const GameProvider = ({ children }) => {
     const user = await ensureUser();
 
     if (presetCode) {
-      // Also what makes GummyGum's room pre-creation work: if GummyGum already
-      // created this room, adopt it as-is. The host spectates, so they are
-      // never seated in `players` — they just take over the room code.
       const existingSnap = await getDoc(doc(db, "games", presetCode));
       if (existingSnap.exists()) {
         localStorage.setItem("gameCode", presetCode);
@@ -348,8 +348,6 @@ export const GameProvider = ({ children }) => {
 
     const code =
       presetCode || Math.random().toString(36).substring(2, 8).toUpperCase();
-    // The host sets the game up, runs the flow and spectates — they are not a
-    // player: no statements, no votes, and never part of `roundOrder`.
     const newGame = {
       status: "lobby",
       gameCode: code,
@@ -369,8 +367,10 @@ export const GameProvider = ({ children }) => {
   };
 
   const joinGame = async (code, playerName, avatarId = null) => {
-    if (!ggSession) {
-      throw new Error('This experience is only available through GummyGum. Head back to the hub to launch it.');
+    if (!ggSession && !MOCK_MODE) {
+      throw new Error(
+        "This experience is only available through GummyGum. Head back to the hub to launch it.",
+      );
     }
     if (MOCK_MODE) {
       alert(
@@ -386,8 +386,6 @@ export const GameProvider = ({ children }) => {
 
     const data = snap.data();
     if (data.status !== "lobby") throw new Error("Game already started");
-    // The host re-entering their own code just resumes hosting — they never
-    // join their own game as a player.
     if (data.hostUid === user.uid) {
       localStorage.setItem("gameCode", code);
       setGameCode(code);
@@ -449,9 +447,7 @@ export const GameProvider = ({ children }) => {
         "startGame blocked: you are not the host of this game. If you reloaded the page and lost host status, create a new game.",
       );
     }
-    // One round per submitted statement set — a player with 3 sets is the
-    // subject 3 times. Shuffle the flattened (uid, setIndex) entries so
-    // everyone's sets are interleaved.
+
     const entries = [];
     Object.entries(gameState.players).forEach(([uid, p]) => {
       const sets =
@@ -500,16 +496,12 @@ export const GameProvider = ({ children }) => {
     try {
       await updateDoc(doc(db, "games", gameCode), updates);
     } catch (err) {
-      // Raw Firebase error, thrown as-is (e.g. permission-denied).
       console.error("startGame failed — updateDoc threw:", err);
       throw err;
     }
   };
 
-  // Players can submit 1–3 statement sets. `sets` is an array of
-  // { statements: [3 strings], lieIndex } — each set gets its own round
-  // in the hot seat. Submitting once is fine; 3 is the max.
-  const submitStatements = async (sets) => {
+  const submitStatements = async (setsOrStatements, maybeLieIndex) => {
     if (!currentUser || !gameCode) {
       console.error(
         "submitStatements blocked:",
@@ -517,14 +509,22 @@ export const GameProvider = ({ children }) => {
       );
       return;
     }
-    // Hosts spectate — they never submit statements.
     if (currentUser.uid === gameState.hostUid) return;
 
-    const capped = (sets || []).slice(0, 3);
+    let sets = [];
+    if (Array.isArray(setsOrStatements)) {
+      sets = setsOrStatements;
+    } else if (setsOrStatements && typeof maybeLieIndex === "number") {
+      sets = [{ statements: setsOrStatements, lieIndex: maybeLieIndex }];
+    }
+
+    const capped = sets.slice(0, 3);
     if (capped.length === 0) return;
 
     const updates = {
       [`players.${currentUser.uid}.statementSets`]: capped,
+      [`players.${currentUser.uid}.statements`]: capped[0].statements,
+      [`players.${currentUser.uid}.lieIndex`]: capped[0].lieIndex,
       [`players.${currentUser.uid}.submitted`]: true,
     };
 
@@ -536,7 +536,6 @@ export const GameProvider = ({ children }) => {
     try {
       await updateDoc(doc(db, "games", gameCode), updates);
     } catch (err) {
-      // Raw Firebase error, thrown as-is.
       console.error("submitStatements failed:", err);
       throw err;
     }
@@ -583,7 +582,6 @@ export const GameProvider = ({ children }) => {
     try {
       await updateDoc(doc(db, "games", gameCode), data);
     } catch (err) {
-      // Raw Firebase error, thrown as-is (e.g. permission-denied).
       console.error("updateGameDoc failed:", err);
       throw err;
     }

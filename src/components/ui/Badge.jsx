@@ -1,17 +1,18 @@
 import React from 'react';
 
 export const Badge = ({ children, variant = 'muted', className = '' }) => {
-  const baseClasses = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold';
+  const baseClasses = 'inline-flex items-center px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wide';
   
   const variants = {
-    amber: 'bg-amber/10 text-amber border border-amber/25',
-    green: 'bg-green/10 text-green border border-green/25',
-    coral: 'bg-coral/10 text-coral border border-coral/25',
-    muted: 'bg-white/5 text-muted border border-border',
+    amber: 'bg-[#FDE8D0] text-[#E8710A] border border-[#F5821F]',
+    orange: 'bg-[#FDE8D0] text-[#E8710A] border border-[#F5821F]',
+    green: 'bg-[#F0FFF5] text-[#22A855] border border-[#22A855]/30',
+    coral: 'bg-[#FFF0EE] text-[#E8334A] border border-[#E8334A]/30',
+    muted: 'bg-white text-mid border border-border shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
   };
 
   return (
-    <span className={`${baseClasses} ${variants[variant]} ${className}`}>
+    <span className={`${baseClasses} ${variants[variant] || variants.muted} ${className}`}>
       {children}
     </span>
   );
