@@ -34,12 +34,7 @@ const COLORS = [
   "#0ea5e9",
 ];
 
-// Mock mode: kicks in when Firebase keys are missing, or when explicitly
-// requested via env (Playwright's webServer config sets this for e2e runs —
-// see playwright.config.js). Deliberately NOT runtime-detectable (no
-// navigator.webdriver / window.__MOCK_MODE__ check): either of those could
-// be set by any visitor's browser or devtools console, which would let
-// anyone bypass the GummyGum-only hard gate in production.
+// Build-time only — never runtime-detectable, or anyone could bypass the gate.
 const MOCK_MODE =
   db.app.options.apiKey === "YOUR_API_KEY" ||
   import.meta.env.VITE_MOCK_MODE === "true";
