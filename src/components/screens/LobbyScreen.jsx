@@ -6,11 +6,14 @@ import { Badge } from '../ui/Badge';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
 export const LobbyScreen = ({ onWrite }) => {
-  const { gameState, currentUser, startGame } = useGame();
+  const { gameState, currentUser, startGame, ggSession } = useGame();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const { gameCode, players, hostUid } = gameState;
   
+  const queryInvited = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('invitedCount') : null;
+  const targetInvited = ggSession?.invitedCount || (queryInvited ? parseInt(queryInvited, 10) : null);
+
   const playersList = Object.values(players || {});
   const isHost = currentUser?.uid === hostUid;
   const MIN_PLAYERS = 3;
@@ -59,7 +62,9 @@ export const LobbyScreen = ({ onWrite }) => {
           {gameCode}
         </div>
         <div className="flex items-center justify-center gap-2">
-          <Badge variant="amber">{playersList.length} / 10 players</Badge>
+          <Badge variant="amber">
+            {targetInvited ? `${playersList.length} / ${targetInvited} players` : `${playersList.length} player${playersList.length === 1 ? '' : 's'}`}
+          </Badge>
         </div>
       </div>
 

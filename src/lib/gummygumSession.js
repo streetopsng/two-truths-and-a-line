@@ -53,6 +53,7 @@ export async function resolveGummyGumLaunch() {
     reportToken: body.data.reportToken,
     roomCode: body.data.roomCode || null,
     isHost: Boolean(body.data.isHost),
+    invitedCount: body.data.invitedCount || null,
     hubUrl,
     round: 1,
     reported: false,
