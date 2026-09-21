@@ -399,13 +399,12 @@ export const GameProvider = ({ children }) => {
     if (!snap.exists()) throw new Error("Game not found");
 
     const data = snap.data();
-    if (data.status !== "lobby") throw new Error("Game already started");
     if (data.hostUid === user.uid) {
       localStorage.setItem("gameCode", code);
       setGameCode(code);
       return;
     }
-    if (data.players[user.uid]) {
+    if (data.players && data.players[user.uid]) {
       localStorage.setItem("gameCode", code);
       setGameCode(code);
       return;
@@ -418,7 +417,7 @@ export const GameProvider = ({ children }) => {
     const ggEmail = ggSession?.player?.email
       ? ggSession.player.email.toLowerCase().trim()
       : null;
-    const staleEntry = ggEmail
+    const staleEntry = ggEmail && data.players
       ? Object.entries(data.players).find(
           ([, p]) => p.email && p.email.toLowerCase() === ggEmail,
         )
@@ -440,7 +439,9 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
-    const numPlayers = Object.keys(data.players).length;
+    if (data.status !== "lobby") throw new Error("Game already started");
+
+    const numPlayers = Object.keys(data.players || {}).length;
     if (numPlayers >= 10) throw new Error("Game is full");
 
     await updateDoc(gameRef, {

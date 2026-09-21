@@ -144,7 +144,12 @@ const GameCoordinator = () => {
 
   if (ggSession?.roomCode && gameState.status === 'home') {
     // Non-host: pick an avatar before joining the pre-created room.
+    // If the participant already joined this room before reloading, wait for room doc sync instead of prompting for avatar setup again.
     if (!ggSession.isHost) {
+      const alreadyJoined = typeof window !== 'undefined' && localStorage.getItem('gameCode') === ggSession.roomCode;
+      if (alreadyJoined) {
+        return <div className="h-screen w-full bg-[#EDEAE4]" />;
+      }
       return <GgAvatarSetupScreen />;
     }
     // Host: waiting for the GummyGum pre-created room to show up.
