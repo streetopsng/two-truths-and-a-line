@@ -9,19 +9,28 @@ import { AvatarPickerModal } from '../ui/AvatarPickerModal';
 // step so both paths give people a chance to pick an avatar. Hosts never see
 // this: they spectate and never get a `players` entry.
 export const GgAvatarSetupScreen = () => {
-  const { ggSession, joinGame } = useGame();
-  const [avatarId, setAvatarId] = useState(null);
+  const email = (ggSession?.player?.email || '').toLowerCase().trim();
+  const [avatarId, setAvatarId] = useState(() => {
+    return (email && localStorage.getItem(`twotruths_avatar_${email}`)) || null;
+  });
   const [showPicker, setShowPicker] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
 
-  const name = ggSession?.player?.name || 'Guest';
+  const name = (email && localStorage.getItem(`twotruths_name_${email}`)) || ggSession?.player?.name || 'Guest';
 
   const handleContinue = async () => {
     if (joining) return;
     setJoining(true);
     setError('');
     try {
+      if (email) {
+        if (avatarId) localStorage.setItem(`twotruths_avatar_${email}`, avatarId);
+        localStorage.setItem(`twotruths_name_${email}`, name);
+        if (ggSession?.roomCode) {
+          localStorage.setItem(`twotruths_joined_${ggSession.roomCode}_${email}`, 'true');
+        }
+      }
       await joinGame(ggSession.roomCode, name, avatarId);
     } catch (err) {
       console.error('GummyGum avatar setup join failed:', err);

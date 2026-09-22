@@ -67,6 +67,23 @@ export async function resolveGummyGumLaunch() {
   return session;
 }
 
+export async function reportGummyGumCancel() {
+  const session = getGummyGumSession();
+  if (!session || !session.reportToken) return;
+
+  try {
+    await fetch(`${API_URL}/api/gummygum/launch/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reportToken: session.reportToken }),
+    });
+  } catch (err) {
+    console.error('GummyGum cancel report failed', err);
+  } finally {
+    sessionStorage.removeItem(STORAGE_KEY);
+  }
+}
+
 export async function reportGummyGumResult(report) {
   const session = getGummyGumSession();
   if (!session || !session.reportToken) return;
