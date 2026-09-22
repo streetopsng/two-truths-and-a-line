@@ -146,7 +146,11 @@ const GameCoordinator = () => {
     // Non-host: pick an avatar before joining the pre-created room.
     // If the participant already joined this room before reloading, wait for room doc sync instead of prompting for avatar setup again.
     if (!ggSession.isHost) {
-      const alreadyJoined = typeof window !== 'undefined' && localStorage.getItem('gameCode') === ggSession.roomCode;
+      const email = (ggSession.player?.email || '').toLowerCase().trim();
+      const alreadyJoined = typeof window !== 'undefined' && (
+        localStorage.getItem('gameCode') === ggSession.roomCode ||
+        (email && localStorage.getItem(`twotruths_joined_${ggSession.roomCode}_${email}`) === 'true')
+      );
       if (alreadyJoined) {
         return <div className="h-screen w-full bg-[#EDEAE4]" />;
       }
