@@ -106,19 +106,6 @@ export const LobbyScreen = ({ onWrite }) => {
           <Badge variant="amber" className="rounded-[8px] py-1 px-3">
             {targetInvited ? `${playersList.length} / ${targetInvited} players joined` : `${playersList.length} player${playersList.length === 1 ? '' : 's'} joined`}
           </Badge>
-          {isHost && (
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="px-3 py-1 bg-[#FAF7F2] hover:bg-[#F0EDE8] border border-[#E0DBD4] rounded-[8px] text-[11px] font-bold text-[#555] hover:text-[#1A1A1A] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-              title="Copy direct invite link"
-            >
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              {copied ? 'Copied link!' : 'Copy invite link'}
-            </button>
-          )}
         </div>
       </div>
 
