@@ -9,6 +9,7 @@ import { AvatarPickerModal } from '../ui/AvatarPickerModal';
 // step so both paths give people a chance to pick an avatar. Hosts never see
 // this: they spectate and never get a `players` entry.
 export const GgAvatarSetupScreen = () => {
+  const { ggSession, joinGame } = useGame();
   const email = (ggSession?.player?.email || '').toLowerCase().trim();
   const [avatarId, setAvatarId] = useState(() => {
     return (email && localStorage.getItem(`twotruths_avatar_${email}`)) || null;
