@@ -18,7 +18,8 @@ export const GgAvatarSetupScreen = () => {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
 
-  const name = (email && localStorage.getItem(`twotruths_name_${email}`)) || ggSession?.player?.name || 'Guest';
+  // GummyGum verified player name is the source of truth
+  const name = ggSession?.player?.name || (email && localStorage.getItem(`twotruths_name_${email}`)) || 'Guest';
 
   const handleContinue = async () => {
     if (joining) return;
@@ -41,41 +42,38 @@ export const GgAvatarSetupScreen = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-[#0a0b10] text-white font-inter flex items-center justify-center px-6 relative overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-amber/20 rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-glowPulse"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-coral/20 rounded-full mix-blend-screen filter blur-[120px] opacity-40 animate-glowPulse" style={{ animationDelay: '1.5s' }}></div>
-      </div>
-
-      <div className="relative z-10 max-w-sm w-full text-center flex flex-col items-center animate-fadeUp">
-        <div className="text-[11px] font-extrabold tracking-[3px] uppercase text-white/40 mb-4">
+    <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      <div className="relative z-10 max-w-sm md:max-w-md w-full bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] p-6 sm:p-8 text-center flex flex-col items-center animate-fadeUp">
+        <div className="text-[11px] font-extrabold tracking-[2px] uppercase text-[#F5821F] mb-1.5">
           You're in, {name}
         </div>
-        <h2 className="text-[32px] md:text-[40px] font-black tracking-tight leading-tight mb-3">
+        <h2 className="text-[26px] sm:text-[30px] font-black tracking-tight text-[#1A1A1A] leading-tight mb-2">
           Pick your avatar
         </h2>
-        <p className="text-[14px] text-white/50 font-medium mb-8 leading-relaxed">
-          This is how the table will see you.
+        <p className="text-[13px] sm:text-[14px] text-[#666] font-medium mb-6">
+          This is how your teammates will see you at the table.
         </p>
 
-        <button type="button" onClick={() => setShowPicker(true)} className="mb-8 group cursor-pointer">
+        <button type="button" onClick={() => setShowPicker(true)} className="mb-6 group cursor-pointer flex flex-col items-center">
           <PlayerAvatar
             name={name}
-            color="#F5A623"
+            color="#F5821F"
             avatarId={avatarId}
-            size="lg"
-            className="!w-24 !h-24 !text-3xl mx-auto ring-2 ring-white/10 group-hover:ring-amber/60 transition-all"
+            size="2xl"
+            className="mx-auto shadow-[0_2px_8px_rgba(0,0,0,0.08)] ring-4 ring-[#FAF7F2] group-hover:scale-105 transition-all"
           />
-          <div className="text-[12px] font-bold text-amber mt-3 uppercase tracking-wider">
-            {avatarId ? 'Change avatar' : 'Choose an avatar'}
+          <div className="text-[12px] font-extrabold text-[#F5821F] mt-3 uppercase tracking-wider flex items-center gap-1.5 bg-[#FDE8D0] px-3.5 py-1.5 rounded-full border border-[#F5821F]/30 group-hover:bg-[#FCD9B3] transition-colors">
+            {avatarId ? '✏️ Change avatar' : '🎨 Choose an avatar'}
           </div>
         </button>
 
         {error && (
-          <div className="text-sm text-red mb-4 font-bold text-center">{error}</div>
+          <div className="text-xs text-[#E8334A] mb-4 font-bold text-center bg-[#FFF0EE] border border-[#E8334A]/20 py-2 px-3 rounded-lg w-full">
+            {error}
+          </div>
         )}
 
-        <Button variant="amber" onClick={handleContinue} disabled={joining} className="w-full">
+        <Button variant="orange" onClick={handleContinue} disabled={joining} className="w-full">
           {joining ? 'Joining…' : 'Continue to lobby →'}
         </Button>
       </div>

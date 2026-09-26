@@ -18,6 +18,8 @@ export const PlayerAvatar = ({ name, color, avatarId, av, className = '', size =
     md: 'w-8 h-8 text-sm',
     lg: 'w-11 h-11 text-xl',
     xl: 'w-16 h-16 text-3xl',
+    '2xl': 'w-24 h-24 text-4xl',
+    '3xl': 'w-28 h-28 text-5xl',
   };
 
   if (avatarId) {
