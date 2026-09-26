@@ -133,16 +133,29 @@ export const LobbyScreen = ({ onWrite }) => {
                 {me.name} <span className="text-[#F5821F] text-xs font-bold">(You)</span>
               </div>
               <div className="text-[11px] text-[#888] font-medium">
-                {me.submitted ? 'Statements ready' : 'Waiting for statements'}
+                {me.submitted ? 'Statements ready' : 'Statement not added'}
               </div>
             </div>
-            <div className={`px-2.5 py-1 rounded-[8px] text-xs font-extrabold border ${
-              me.submitted 
-                ? 'bg-[#F0FFF5] text-[#22A855] border-[#22A855]/30' 
-                : 'bg-[#FDE8D0] text-[#E8710A] border-[#F5821F]'
-            }`}>
-              {me.submitted ? '✓ Ready' : 'Incomplete'}
-            </div>
+            {me.submitted ? (
+              <button
+                type="button"
+                onClick={handleWriteClick}
+                className="px-2.5 py-1 rounded-[8px] text-xs font-extrabold border bg-[#F0FFF5] text-[#22A855] border-[#22A855]/30 hover:bg-[#E0F8E8] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                title="Change or edit your statements"
+              >
+                <span>✓ Ready</span>
+                <span className="text-[10px] text-[#22A855] underline">Edit ✏️</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleWriteClick}
+                className="px-2.5 py-1 rounded-[8px] text-[11px] font-extrabold border bg-[#FFF0EE] text-[#E8334A] border-[#E8334A]/30 hover:bg-[#FFE5E2] transition-all cursor-pointer shadow-2xs"
+                title="Click to write statements"
+              >
+                Statement not added
+              </button>
+            )}
           </div>
         )}
 
@@ -193,8 +206,8 @@ export const LobbyScreen = ({ onWrite }) => {
                     ✓ Ready
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-[11px] font-extrabold bg-[#FDE8D0] text-[#E8710A] border border-[#F5821F]/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-dotPulse" /> Writing…
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-bold bg-[#FFF0EE] text-[#E8334A] border border-[#E8334A]/30">
+                    Statement not added
                   </span>
                 )}
               </div>
@@ -229,10 +242,9 @@ export const LobbyScreen = ({ onWrite }) => {
           <Button 
             variant={me?.submitted ? 'outline' : 'orange'} 
             onClick={handleWriteClick}
-            disabled={me?.submitted}
-            className="w-full rounded-xl"
+            className="w-full rounded-xl cursor-pointer"
           >
-            {me?.submitted ? '✓ Statements submitted' : '✍️ Write my statements'}
+            {me?.submitted ? '✏️ Edit my statements' : '✍️ Write my statements'}
           </Button>
         )}
 

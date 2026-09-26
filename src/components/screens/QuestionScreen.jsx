@@ -12,6 +12,12 @@ export const QuestionScreen = () => {
   const setIndex = roundEntry?.setIndex ?? 0;
   const subject = players?.[subjectUid];
   const activeSet = subject?.statementSets?.[setIndex] || (subject?.statements ? { statements: subject.statements, lieIndex: subject.lieIndex } : null);
+  const hasValidStatements = Boolean(
+    activeSet?.statements &&
+    Array.isArray(activeSet.statements) &&
+    activeSet.statements.length > 0 &&
+    activeSet.statements.some((st) => st && String(st).trim())
+  );
   const me = players?.[currentUser?.uid];
   const isMe = subjectUid === currentUser?.uid;
   const isHost = currentUser?.uid === hostUid;
@@ -197,7 +203,17 @@ export const QuestionScreen = () => {
       </div>
 
       {/* Statements or Subject Wait */}
-      {isMe && !revealed ? (
+      {!hasValidStatements ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 my-3 bg-white border border-[#E0DBD4] rounded-[16px] shadow-[0_2px_0_#E0DBD4]">
+          <div className="text-[44px] leading-none">📝</div>
+          <div className="text-[18px] font-black text-[#1A1A1A]">Statement not added</div>
+          <div className="text-[13px] text-[#666] max-w-[280px] leading-relaxed">
+            {isMe 
+              ? "You didn't add your statements before this round began." 
+              : `${subject?.name || 'This player'} didn't add their statements before this round began.`}
+          </div>
+        </div>
+      ) : isMe && !revealed ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 my-2">
           <div className="text-[52px] animate-pulseCustom leading-none">👀</div>
           <div className="text-[22px] font-black text-[#1A1A1A]">It's your round!</div>
@@ -321,7 +337,7 @@ export const QuestionScreen = () => {
         </div>
       ) : (
         <div className="text-[11px] text-[#999] text-center font-bold uppercase tracking-wider shrink-0 pb-1">
-          {revealed ? 'Revealing results...' : (isMe ? 'Host managing round' : (myVote !== undefined ? '✓ Vote submitted' : 'Pick the statement you think is the lie'))}
+          {!hasValidStatements ? 'No statements submitted for this player' : revealed ? 'Revealing results...' : (isMe ? 'Host managing round' : (myVote !== undefined ? '✓ Vote submitted' : 'Pick the statement you think is the lie'))}
         </div>
       )}
     </div>

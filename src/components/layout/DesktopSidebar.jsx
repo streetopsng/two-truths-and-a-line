@@ -64,8 +64,14 @@ export const DesktopSidebar = () => {
                   )}
                 </div>
                 {status === 'lobby' && (
-                  <div className="shrink-0 flex items-center justify-center w-5 h-5 text-xs">
-                    {p.submitted ? '✅' : <span className="w-2 h-2 rounded-full bg-[#F5821F] animate-dotPulse"></span>}
+                  <div className="shrink-0 flex items-center justify-center text-xs">
+                    {p.submitted ? (
+                      <span className="text-[#22A855] text-xs font-bold" title="Statements ready">✓</span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-[#E8334A] bg-[#FFF0EE] border border-[#E8334A]/30 px-1.5 py-0.5 rounded-[6px]" title="Statement not added">
+                        Not added
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

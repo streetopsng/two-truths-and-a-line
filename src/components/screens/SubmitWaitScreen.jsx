@@ -34,13 +34,22 @@ export const SubmitWaitScreen = () => {
         </div>
       </div>
 
-      <Button 
-        variant="outline" 
-        className="mt-4 !w-auto !py-3 !px-6 !text-[13px]"
-        onClick={() => navigate('/lobby')}
-      >
-        ← Back to lobby
-      </Button>
+      <div className="flex items-center justify-center gap-2.5 mt-2 flex-wrap w-full">
+        <Button 
+          variant="orange" 
+          className="!w-auto !py-2.5 !px-5 !text-[13px] rounded-xl"
+          onClick={() => navigate('/submit')}
+        >
+          ✏️ Edit my statements
+        </Button>
+        <Button 
+          variant="outline" 
+          className="!w-auto !py-2.5 !px-5 !text-[13px] rounded-xl"
+          onClick={() => navigate('/lobby')}
+        >
+          ← Back to lobby
+        </Button>
+      </div>
     </div>
   );
 };
