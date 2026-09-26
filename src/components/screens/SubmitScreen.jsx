@@ -7,32 +7,56 @@ const MAX_SETS = 3;
 const emptySet = () => ({ statements: ['', '', ''], lieIndex: -1 });
 
 export const SubmitScreen = ({ onSubmitted }) => {
-  const { submitStatements } = useGame();
+  const { submitStatements, gameState, currentUser } = useGame();
   const navigate = useNavigate();
-  const [sets, setSets] = useState([emptySet()]);
+  const me = gameState?.players?.[currentUser?.uid];
+
+  const initialSets = () => {
+    if (me?.statementSets && Array.isArray(me.statementSets) && me.statementSets.length > 0) {
+      return me.statementSets.map((s) => ({
+        statements: Array.isArray(s.statements) ? [...s.statements] : ['', '', ''],
+        lieIndex: typeof s.lieIndex === 'number' ? s.lieIndex : -1,
+      }));
+    }
+    if (me?.statements && Array.isArray(me.statements) && me.statements.length > 0) {
+      return [
+        {
+          statements: [...me.statements],
+          lieIndex: typeof me.lieIndex === 'number' ? me.lieIndex : -1,
+        },
+      ];
+    }
+    return [emptySet()];
+  };
+
+  const [sets, setSets] = useState(initialSets);
   const [error, setError] = useState('');
 
+  const isEditing = Boolean(me?.submitted);
+
   const updateStatement = (setIdx, stmtIdx, value) => {
-    setSets(prev => prev.map((s, i) => (
-      i === setIdx
-        ? { ...s, statements: s.statements.map((st, j) => (j === stmtIdx ? value : st)) }
-        : s
-    )));
+    setSets((prev) =>
+      prev.map((s, i) =>
+        i === setIdx
+          ? { ...s, statements: s.statements.map((st, j) => (j === stmtIdx ? value : st)) }
+          : s
+      )
+    );
   };
 
   const updateLieIndex = (setIdx, lieIdx) => {
-    setSets(prev => prev.map((s, i) => (
-      i === setIdx ? { ...s, lieIndex: lieIdx } : s
-    )));
+    setSets((prev) =>
+      prev.map((s, i) => (i === setIdx ? { ...s, lieIndex: lieIdx } : s))
+    );
   };
 
-  const addSet = () => setSets(prev => (prev.length < MAX_SETS ? [...prev, emptySet()] : prev));
-  const removeSet = (setIdx) => setSets(prev => prev.filter((_, i) => i !== setIdx));
+  const addSet = () => setSets((prev) => (prev.length < MAX_SETS ? [...prev, emptySet()] : prev));
+  const removeSet = (setIdx) => setSets((prev) => prev.filter((_, i) => i !== setIdx));
 
   const handleSubmit = async () => {
     for (let i = 0; i < sets.length; i++) {
       const s = sets[i];
-      if (s.statements.some(st => !st.trim())) {
+      if (s.statements.some((st) => !st.trim())) {
         setError(sets.length > 1 ? `Set ${i + 1}: fill in all 3 statements first.` : 'Fill in all 3 statements first.');
         return;
       }
@@ -46,21 +70,30 @@ export const SubmitScreen = ({ onSubmitted }) => {
     if (onSubmitted) {
       onSubmitted();
     } else {
-      navigate('/submit/wait');
+      navigate('/lobby');
     }
   };
 
   return (
     <div className="flex flex-col h-full max-w-[430px] md:max-w-[500px] w-full mx-auto relative z-10 p-4 sm:p-6 justify-between animate-fadeUp">
       <div className="shrink-0 pt-2 pb-2">
-        <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#F5821F]">
-          2 Truths & a Lie
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#F5821F]">
+            2 Truths & a Lie
+          </div>
+          {isEditing && (
+            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-[6px] bg-[#F0FFF5] text-[#22A855] border border-[#22A855]/30">
+              Editing Mode
+            </span>
+          )}
         </div>
         <h2 className="text-[26px] font-black text-[#1A1A1A] mt-0.5 tracking-tight">
-          Write your statements
+          {isEditing ? 'Edit your statements' : 'Write your statements'}
         </h2>
         <p className="text-[13px] text-[#555] leading-[1.55] mt-1">
-          Write 2 things that are true about you and 1 that's a lie. Mark the lie — nobody sees which one until the reveal.
+          {isEditing
+            ? 'Update your statements or change which one is the lie. Changes take effect immediately in the lobby.'
+            : "Write 2 things that are true about you and 1 that's a lie. Mark the lie — nobody sees which one until the reveal."}
         </p>
       </div>
 
@@ -83,14 +116,14 @@ export const SubmitScreen = ({ onSubmitted }) => {
               </div>
             )}
 
-            {[0, 1, 2].map(i => {
+            {[0, 1, 2].map((i) => {
               const isLie = set.lieIndex === i;
               return (
-                <div 
+                <div
                   key={i}
                   className={`rounded-[16px] p-4 transition-all duration-200 border-[1.5px] ${
-                    isLie 
-                      ? 'bg-white border-[#F5821F] shadow-[0_3px_0_#E8710A]' 
+                    isLie
+                      ? 'bg-white border-[#F5821F] shadow-[0_3px_0_#E8710A]'
                       : 'bg-[#FAF7F2] border-[#E0DBD4] shadow-[0_3px_0_#E0DBD4]'
                   }`}
                 >
@@ -100,7 +133,7 @@ export const SubmitScreen = ({ onSubmitted }) => {
                   <textarea
                     className="w-full bg-transparent border-b-[1.5px] border-[#E0DBD4] text-[#1A1A1A] text-[15px] font-medium py-1.5 focus:outline-none focus:border-[#F5821F] resize-none leading-[1.4] placeholder:text-[#bbb]"
                     rows={2}
-                    placeholder={i === 2 ? "This one could be the lie..." : "Tell them something true..."}
+                    placeholder={i === 2 ? 'This one could be the lie...' : 'Tell them something true...'}
                     maxLength={120}
                     value={set.statements[i]}
                     onChange={(e) => updateStatement(setIdx, i, e.target.value)}
@@ -109,15 +142,17 @@ export const SubmitScreen = ({ onSubmitted }) => {
                     {set.statements[i].length} / 120
                   </div>
 
-                  <div 
+                  <div
                     className="flex items-center gap-2 mt-2.5 cursor-pointer w-fit select-none"
                     onClick={() => updateLieIndex(setIdx, i)}
                   >
-                    <div className={`w-5 h-5 rounded-[5px] border-2 flex items-center justify-center transition-all ${
-                      isLie 
-                        ? 'bg-[#F5821F] border-[#F5821F] text-white font-black text-xs' 
-                        : 'bg-white border-[#E0DBD4]'
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded-[5px] border-2 flex items-center justify-center transition-all ${
+                        isLie
+                          ? 'bg-[#F5821F] border-[#F5821F] text-white font-black text-xs'
+                          : 'bg-white border-[#E0DBD4]'
+                      }`}
+                    >
                       {isLie && '✓'}
                     </div>
                     <div className={`text-[12px] font-bold ${isLie ? 'text-[#E8710A]' : 'text-[#555]'}`}>
@@ -147,9 +182,16 @@ export const SubmitScreen = ({ onSubmitted }) => {
             {error}
           </div>
         )}
-        <Button onClick={handleSubmit} className="w-full">
-          Lock in my statements
+        <Button onClick={handleSubmit} className="w-full rounded-xl">
+          {isEditing ? 'Save statement changes' : 'Lock in my statements'}
         </Button>
+        <button
+          type="button"
+          onClick={() => navigate('/lobby')}
+          className="w-full py-1.5 text-center text-xs font-bold text-[#777] hover:text-[#1A1A1A] transition-colors cursor-pointer"
+        >
+          {isEditing ? 'Cancel & keep current statements' : '← Back to lobby'}
+        </button>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const Badge = ({ children, variant = 'muted', className = '' }) => {
-  const baseClasses = 'inline-flex items-center px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wide';
+  const baseClasses = 'inline-flex items-center px-3 py-1 rounded-[8px] text-[11px] font-extrabold tracking-wide';
   
   const variants = {
     amber: 'bg-[#FDE8D0] text-[#E8710A] border border-[#F5821F]',

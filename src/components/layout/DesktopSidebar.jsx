@@ -16,6 +16,9 @@ export const DesktopSidebar = () => {
 
   const me = players?.[currentUser?.uid];
 
+  const queryInvited = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('invitedCount') : null;
+  const targetInvited = ggSession?.invitedCount || (queryInvited ? parseInt(queryInvited, 10) : null) || gameState?.invitedCount;
+
   return (
     <div className="hidden md:flex flex-col w-[300px] lg:w-[320px] shrink-0 border-r border-[#E0DBD4] bg-white/70 backdrop-blur-md h-full p-6 relative z-20 shadow-[2px_0_12px_rgba(0,0,0,0.03)]">
       {(status === 'question' || status === 'reaction' || status === 'leaderboard') && (
@@ -31,7 +34,7 @@ export const DesktopSidebar = () => {
 
       <div className="flex items-center justify-between mb-3">
         <div className="text-[10px] tracking-[2px] uppercase text-[#999] font-extrabold">
-          Players ({playersList.length}/10)
+          {targetInvited ? `Players (${playersList.length}/${targetInvited})` : `Players (${playersList.length})`}
         </div>
       </div>
 
@@ -61,8 +64,14 @@ export const DesktopSidebar = () => {
                   )}
                 </div>
                 {status === 'lobby' && (
-                  <div className="shrink-0 flex items-center justify-center w-5 h-5 text-xs">
-                    {p.submitted ? '✅' : <span className="w-2 h-2 rounded-full bg-[#F5821F] animate-dotPulse"></span>}
+                  <div className="shrink-0 flex items-center justify-center text-xs">
+                    {p.submitted ? (
+                      <span className="text-[#22A855] text-xs font-bold" title="Statements ready">✓</span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-[#E8334A] bg-[#FFF0EE] border border-[#E8334A]/30 px-1.5 py-0.5 rounded-[6px]" title="Statement not added">
+                        Not added
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
