@@ -5,10 +5,10 @@ import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { AvatarPickerModal } from '../ui/AvatarPickerModal';
 
 export const HomeScreen = () => {
-  const { createGame, joinGame } = useGame();
+  const { createGame, joinGame, ggSession } = useGame();
   const [showJoin, setShowJoin] = useState(false);
   const [joinCode, setJoinCode] = useState('');
-  const [joinName, setJoinName] = useState('');
+  const [joinName, setJoinName] = useState(ggSession?.player?.name || '');
   const [joinAvatarId, setJoinAvatarId] = useState(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [error, setError] = useState('');
@@ -105,19 +105,30 @@ export const HomeScreen = () => {
                   />
                 </div>
                 
-                <div>
-                  <div className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#555] mb-2">
-                    Your Name
+                {ggSession?.player?.name ? (
+                  <div className="bg-[#FAF7F2] border border-[#E0DBD4] rounded-xl p-3 text-center">
+                    <div className="text-[10px] font-extrabold tracking-[1.5px] uppercase text-[#777]">
+                      Playing As
+                    </div>
+                    <div className="text-[15px] font-black text-[#1A1A1A] mt-0.5">
+                      {ggSession.player.name}
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="e.g. Ayoola"
-                    className="fi text-center font-bold text-base"
-                    maxLength={20}
-                    value={joinName}
-                    onChange={(e) => setJoinName(e.target.value)}
-                  />
-                </div>
+                ) : (
+                  <div>
+                    <div className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#555] mb-2">
+                      Your Name
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Enter your name"
+                      className="fi text-center font-bold text-base"
+                      maxLength={20}
+                      value={joinName}
+                      onChange={(e) => setJoinName(e.target.value)}
+                    />
+                  </div>
+                )}
 
                 <div>
                   <div className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#555] mb-2">
@@ -126,11 +137,19 @@ export const HomeScreen = () => {
                   <button
                     type="button"
                     onClick={() => setShowAvatarPicker(true)}
-                    className="w-full flex items-center gap-3 bg-[#FAF7F2] border border-[#E0DBD4] rounded-xl p-3 hover:border-[#F5821F] transition-all cursor-pointer"
+                    className="w-full flex items-center gap-3.5 bg-[#FAF7F2] border border-[#E0DBD4] rounded-xl p-3 hover:border-[#F5821F] transition-all cursor-pointer"
                   >
-                    <PlayerAvatar name={joinName} color="#F5821F" avatarId={joinAvatarId} size="md" />
-                    <span className="text-[13px] font-bold text-[#555]">
-                      {joinAvatarId ? 'Change avatar' : 'Choose an avatar (optional)'}
+                    <PlayerAvatar name={joinName || 'Player'} color="#F5821F" avatarId={joinAvatarId} size="lg" className="shrink-0 shadow-xs" />
+                    <div className="text-left flex-1 min-w-0">
+                      <div className="text-[13px] font-bold text-[#1A1A1A]">
+                        {joinAvatarId ? 'Avatar selected' : 'Choose an avatar'}
+                      </div>
+                      <div className="text-[11px] font-medium text-[#777]">
+                        {joinAvatarId ? 'Click to change' : 'Optional · Illustrated avatar'}
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-[#F5821F] bg-[#FDE8D0] px-2.5 py-1 rounded-lg border border-[#F5821F]/30">
+                      {joinAvatarId ? 'Change' : 'Pick'}
                     </span>
                   </button>
                 </div>
