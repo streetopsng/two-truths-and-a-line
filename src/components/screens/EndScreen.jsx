@@ -34,10 +34,12 @@ export const EndScreen = () => {
   const handleLeave = () => {
     if (ggSession?.isHost) {
       closeGummyGumSession();
-    } else if (ggSession) {
-      returnToGummyGum();
     } else {
-      leaveGame();
+      try {
+        window.close();
+      } catch {
+        // ignore
+      }
     }
   };
 
@@ -49,7 +51,7 @@ export const EndScreen = () => {
           onClick={handleLeave}
           className="text-[12px] font-extrabold uppercase tracking-wider text-[#555] hover:text-[#1A1A1A] cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]"
         >
-          {ggSession?.isHost ? '← End session' : '← Leave game'}
+          {ggSession?.isHost ? '← End session' : 'Close tab'}
         </button>
         <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#E8710A]">
           Game Over
@@ -161,12 +163,10 @@ export const EndScreen = () => {
               Close Session & Return to GummyGum
             </button>
           ) : (
-            <button
-              onClick={() => returnToGummyGum()}
-              className="px-6 py-3 rounded-full bg-white hover:bg-[#FAF7F2] border border-[#E0DBD4] text-[#1A1A1A] font-bold text-[14px] transition-all cursor-pointer shadow-[0_2px_0_#E0DBD4]"
-            >
-              Return to GummyGum
-            </button>
+            <div className="text-center px-5 py-3 bg-white/90 border border-[#E0DBD4] rounded-2xl shadow-xs">
+              <div className="text-xs font-black text-[#1A1A1A]">Session completed!</div>
+              <p className="text-[11.5px] text-[#777] mt-0.5">Thank you for playing — you can safely close this tab now.</p>
+            </div>
           )}
         </div>
       )}

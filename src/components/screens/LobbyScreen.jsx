@@ -46,19 +46,17 @@ export const LobbyScreen = ({ onWrite }) => {
     <div className="flex flex-col h-full max-w-[440px] md:max-w-[520px] mx-auto justify-between relative z-10 p-4 sm:p-6 animate-fadeUp">
       {/* Top action bar */}
       <div className="flex items-center justify-between px-1 pb-1 shrink-0">
-        <button
-          onClick={() => {
-            if (isHost) {
-              setShowCancelModal(true);
-            } else {
-              returnToGummyGum();
-            }
-          }}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-[#E0DBD4] text-xs font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
-          title="Back to GummyGum"
-        >
-          <span>← Back to GummyGum</span>
-        </button>
+        {isHost ? (
+          <button
+            onClick={() => setShowCancelModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-[#E0DBD4] text-xs font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+            title="Cancel session & return to GummyGum"
+          >
+            <span>← Back to GummyGum</span>
+          </button>
+        ) : (
+          <div />
+        )}
         <span className="text-[11px] font-extrabold text-[#999] uppercase tracking-wider">
           Two Truths
         </span>
