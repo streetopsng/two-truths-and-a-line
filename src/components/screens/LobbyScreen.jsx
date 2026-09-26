@@ -11,7 +11,6 @@ export const LobbyScreen = ({ onWrite }) => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [copied, setCopied] = useState(false);
   const { gameCode, players, hostUid } = gameState;
   
   const queryInvited = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('invitedCount') : null;
@@ -24,16 +23,6 @@ export const LobbyScreen = ({ onWrite }) => {
   const readyCount = playersList.filter((p) => p.submitted).length;
   const allSubmitted = playersList.length > 0 && playersList.every((p) => p.submitted);
   const me = players?.[currentUser?.uid];
-
-  const handleCopyLink = () => {
-    const hubUrl = ggSession?.hubUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://gummygum.app');
-    const joinUrl = `${hubUrl}/join?pin=${gameCode}`;
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(joinUrl);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleStart = async () => {
     setError('');
