@@ -98,11 +98,11 @@ export const LobbyScreen = ({ onWrite }) => {
         </div>
       </div>
 
-      {/* Players / Participants List */}
-      <div className="flex-1 overflow-y-auto my-3 px-1">
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto my-3 px-1 flex flex-col gap-3">
         {/* 'You' Card (only for players, not host) */}
         {!isHost && me && (
-          <div className="mb-3 bg-white border-[1.5px] border-[#F5821F] rounded-[14px] p-3.5 flex items-center gap-3 shadow-[0_2px_0_#E8710A]">
+          <div className="bg-white border-[1.5px] border-[#F5821F] rounded-[14px] p-3.5 flex items-center gap-3 shadow-[0_2px_0_#E8710A]">
             <PlayerAvatar name={me.name} color={me.color} avatarId={me.avatarId} size="md" />
             <div className="flex-1 min-w-0">
               <div className="text-[14px] font-extrabold text-[#1A1A1A]">
@@ -135,80 +135,104 @@ export const LobbyScreen = ({ onWrite }) => {
           </div>
         )}
 
-        {/* Section Header */}
-        <div className="flex items-center justify-between px-1 mb-2">
-          <div className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#555]">
-            {isHost ? "Participants" : "Other Players"} ({playersList.length}{targetInvited ? `/${targetInvited}` : ''})
+        {/* How it works card (Clean & informative for Desktop main view) */}
+        <div className="hidden md:block bg-white/80 border border-[#E0DBD4] rounded-[16px] p-4 shadow-xs">
+          <div className="text-[11px] font-black uppercase tracking-[1.5px] text-[#999] mb-2">
+            How It Works
           </div>
-          {playersList.length > 0 && (
-            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-[6px] ${
-              allSubmitted 
-                ? 'text-[#22A855] bg-[#F0FFF5] border border-[#22A855]/30' 
-                : 'text-[#E8710A] bg-[#FDE8D0] border border-[#F5821F]/30'
-            }`}>
-              {readyCount} of {playersList.length} ready
-            </span>
-          )}
+          <div className="space-y-2 text-xs text-[#555]">
+            <div className="flex items-start gap-2">
+              <span className="w-5 h-5 rounded-full bg-[#FAF7F2] border border-[#E0DBD4] text-[#F5821F] font-bold text-[11px] flex items-center justify-center shrink-0">1</span>
+              <span>Each player writes <strong>2 true statements</strong> and <strong>1 lie</strong> about themselves.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="w-5 h-5 rounded-full bg-[#FAF7F2] border border-[#E0DBD4] text-[#F5821F] font-bold text-[11px] flex items-center justify-center shrink-0">2</span>
+              <span>In each round, teammates read all three statements and vote to spot the lie.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="w-5 h-5 rounded-full bg-[#FAF7F2] border border-[#E0DBD4] text-[#F5821F] font-bold text-[11px] flex items-center justify-center shrink-0">3</span>
+              <span>Score <strong>100 points</strong> for every correct deduction and rise up the leaderboard!</span>
+            </div>
+          </div>
         </div>
 
-        {/* Progress bar when players exist */}
-        {playersList.length > 0 && (
-          <div className="h-1.5 bg-[#E0DBD4] rounded-[6px] overflow-hidden mb-2.5 mx-1">
-            <div 
-              className="h-full bg-[#22A855] rounded-[6px] transition-all duration-500" 
-              style={{ width: `${(readyCount / playersList.length) * 100}%` }}
-            />
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2">
-          {playersList.filter((p) => isHost || p.name !== me?.name).map((p, i) => (
-            <div 
-              key={i} 
-              className="flex items-center gap-3 p-3 rounded-[12px] bg-white border border-[#E0DBD4] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-[#F5821F]/40 transition-all"
-            >
-              <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold text-[#1A1A1A] truncate">
-                  {p.name}
-                </div>
-                {p.email && (
-                  <div className="text-[11px] text-[#888] truncate">{p.email}</div>
-                )}
-              </div>
-              <div className="text-xs shrink-0">
-                {p.submitted ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-extrabold bg-[#F0FFF5] text-[#22A855] border border-[#22A855]/30">
-                    ✓ Ready
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-bold bg-[#FFF0EE] text-[#E8334A] border border-[#E8334A]/30">
-                    Statement not added
-                  </span>
-                )}
-              </div>
+        {/* Participants List (Mobile only: on Desktop it is shown in the sidebar to avoid duplication) */}
+        <div className="md:hidden flex flex-col gap-2 mt-1">
+          {/* Section Header */}
+          <div className="flex items-center justify-between px-1 mb-1">
+            <div className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#555]">
+              {isHost ? "Participants" : "Other Players"} ({playersList.length}{targetInvited ? `/${targetInvited}` : ''})
             </div>
-          ))}
+            {playersList.length > 0 && (
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-[6px] ${
+                allSubmitted 
+                  ? 'text-[#22A855] bg-[#F0FFF5] border border-[#22A855]/30' 
+                  : 'text-[#E8710A] bg-[#FDE8D0] border border-[#F5821F]/30'
+              }`}>
+                {readyCount} of {playersList.length} ready
+              </span>
+            )}
+          </div>
 
-          {playersList.length === 0 && (
-            <div className="bg-white/80 border border-[#E0DBD4] rounded-[16px] p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex flex-col items-center justify-center gap-2 my-2">
-              <div className="w-12 h-12 rounded-xl bg-[#FAF7F2] border border-[#E0DBD4] text-[#F5821F] flex items-center justify-center shadow-2xs">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <div className="text-[13px] font-bold text-[#1A1A1A]">
-                Waiting for teammates to connect…
-              </div>
-              <p className="text-[11.5px] text-[#777] max-w-[280px] leading-relaxed">
-                Teammates will appear here live once they open their email invite link.
-              </p>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] bg-[#FAF7F2] border border-[#E0DBD4] text-[10.5px] font-bold text-[#888] mt-1">
-                <span className="w-2 h-2 rounded-full bg-[#F5821F] animate-dotPulse" />
-                Listening for live connections
-              </div>
+          {/* Progress bar when players exist */}
+          {playersList.length > 0 && (
+            <div className="h-1.5 bg-[#E0DBD4] rounded-[6px] overflow-hidden mb-2 mx-1">
+              <div 
+                className="h-full bg-[#22A855] rounded-[6px] transition-all duration-500" 
+                style={{ width: `${(readyCount / playersList.length) * 100}%` }}
+              />
             </div>
           )}
+
+          <div className="flex flex-col gap-2">
+            {playersList.filter((p) => isHost || p.name !== me?.name).map((p, i) => (
+              <div 
+                key={i} 
+                className="flex items-center gap-3 p-3 rounded-[12px] bg-white border border-[#E0DBD4] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-[#F5821F]/40 transition-all"
+              >
+                <PlayerAvatar name={p.name} color={p.color} avatarId={p.avatarId} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-bold text-[#1A1A1A] truncate">
+                    {p.name}
+                  </div>
+                  {p.email && (
+                    <div className="text-[11px] text-[#888] truncate">{p.email}</div>
+                  )}
+                </div>
+                <div className="text-xs shrink-0">
+                  {p.submitted ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-extrabold bg-[#F0FFF5] text-[#22A855] border border-[#22A855]/30">
+                      ✓ Ready
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-bold bg-[#FFF0EE] text-[#E8334A] border border-[#E8334A]/30">
+                      Statement not added
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {playersList.length === 0 && (
+              <div className="bg-white/80 border border-[#E0DBD4] rounded-[16px] p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex flex-col items-center justify-center gap-2 my-2">
+                <div className="w-12 h-12 rounded-xl bg-[#FAF7F2] border border-[#E0DBD4] text-[#F5821F] flex items-center justify-center shadow-2xs">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div className="text-[13px] font-bold text-[#1A1A1A]">
+                  Waiting for teammates to connect…
+                </div>
+                <p className="text-[11.5px] text-[#777] max-w-[280px] leading-relaxed">
+                  Teammates will appear here live once they open their email invite link.
+                </p>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] bg-[#FAF7F2] border border-[#E0DBD4] text-[10.5px] font-bold text-[#888] mt-1">
+                  <span className="w-2 h-2 rounded-full bg-[#F5821F] animate-dotPulse" />
+                  Listening for live connections
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
