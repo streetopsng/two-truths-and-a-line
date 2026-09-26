@@ -114,6 +114,8 @@ export const GameProvider = ({ children }) => {
     };
   }, []);
 
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
+
   // 2. Listen to Firestore Game Document (or mock it)
   useEffect(() => {
     if (MOCK_MODE) return;
@@ -127,17 +129,19 @@ export const GameProvider = ({ children }) => {
       doc(db, "games", gameCode),
       (docSnap) => {
         if (docSnap.exists()) {
-          setGameState({ id: docSnap.id, ...docSnap.data() });
+          const data = docSnap.data();
+          if (data.status === 'expired' || data.status === 'Ended') {
+            setIsSessionExpired(true);
+          }
+          if (data.status === 'lobby' && data.createdAt && Date.now() - data.createdAt >= 20 * 60 * 1000) {
+            setIsSessionExpired(true);
+          }
+          setGameState({ id: docSnap.id, ...data });
         } else {
           localStorage.removeItem("gameCode");
           setGameCode("");
-          if (ggSession?.isHost) {
-            // GummyGum is the source of the cancellation here, so the hub
-            // already knows the session ended — just redirect, don't
-            // re-hit the close endpoint.
-            returnToGummyGum();
-          } else if (ggSession) {
-            setGameState({ status: "gg-cancelled" });
+          if (ggSession) {
+            setIsSessionExpired(true);
           } else {
             setGameState({ status: "home" });
           }
@@ -150,6 +154,22 @@ export const GameProvider = ({ children }) => {
 
     return unsub;
   }, [currentUser, gameCode, ggSession]);
+
+  // Real-time interval check every 10s for 20-minute lobby expiration
+  useEffect(() => {
+    if (gameState.status !== 'lobby' || !gameState.createdAt) return;
+
+    const checkExpiration = () => {
+      const elapsed = Date.now() - gameState.createdAt;
+      if (elapsed >= 20 * 60 * 1000) {
+        setIsSessionExpired(true);
+      }
+    };
+
+    checkExpiration();
+    const interval = setInterval(checkExpiration, 10000);
+    return () => clearInterval(interval);
+  }, [gameState.status, gameState.createdAt]);
 
   // 3. Report the launching host's final result back to the GummyGum hub
   useEffect(() => {
@@ -366,6 +386,7 @@ export const GameProvider = ({ children }) => {
     const newGame = {
       status: "lobby",
       gameCode: code,
+      createdAt: Date.now(),
       hostUid: user.uid,
       hostName: playerName || "Host",
       invitedCount: targetInvited ? parseInt(targetInvited, 10) : null,
@@ -644,6 +665,8 @@ export const GameProvider = ({ children }) => {
         authError,
         ggSession,
         ggChecked,
+        isSessionExpired,
+        setIsSessionExpired,
         createGame,
         joinGame,
         leaveGame,

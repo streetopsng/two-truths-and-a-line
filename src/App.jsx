@@ -67,19 +67,55 @@ const GameRouteSync = () => {
   return null;
 };
 
-const GummyGumLockedScreen = () => (
-  <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex items-center justify-center px-6 relative">
+import { SessionExpiredModal } from './components/ui/SessionExpiredModal';
+
+const LoadingScreen = ({ message = "Connecting to session…" }) => (
+  <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex flex-col items-center justify-center p-6 relative overflow-hidden">
     <BackgroundTexture />
-    <div className="card max-w-sm w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] relative z-10">
-      <div className="text-4xl animate-float">🔒</div>
-      <h1 className="text-xl font-black">This experience is only available through GummyGum</h1>
-      <p className="text-[#555] text-sm leading-relaxed">Open it from the GummyGum hub to play.</p>
-      <a href="https://gummygum.app" className="block pt-2">
-        <Button variant="orange" className="w-full">Go to GummyGum</Button>
-      </a>
+    <div className="card max-w-xs w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[24px] shadow-[0_4px_0_#E0DBD4] relative z-10 flex flex-col items-center animate-fadeUp">
+      <div className="w-14 h-14 rounded-2xl bg-[#FDE8D0] border border-[#F5821F]/30 flex items-center justify-center text-2xl shadow-xs">
+        <span className="text-2xl animate-pulse">🤫</span>
+      </div>
+      <div>
+        <h3 className="text-[15px] font-black text-[#1A1A1A]">{message}</h3>
+        <p className="text-[12px] text-[#777] mt-1 font-medium">Getting everything ready for you…</p>
+      </div>
+      <div className="w-full bg-[#EDEAE4] h-1.5 rounded-full overflow-hidden mt-1">
+        <div className="bg-[#F5821F] h-full w-2/3 rounded-full animate-pulse" />
+      </div>
     </div>
   </div>
 );
+
+const GummyGumLockedScreen = () => {
+  const isParticipant = typeof window !== 'undefined' && (
+    new URLSearchParams(window.location.search).get('player') ||
+    new URLSearchParams(window.location.search).get('code') ||
+    new URLSearchParams(window.location.search).get('invitedCount')
+  );
+
+  return (
+    <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex items-center justify-center px-6 relative">
+      <BackgroundTexture />
+      <div className="card max-w-sm w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] relative z-10">
+        <div className="text-4xl animate-float">{isParticipant ? '🏁' : '🔒'}</div>
+        <h1 className="text-xl font-black">
+          {isParticipant ? 'Session concluded' : 'This experience is only available through GummyGum'}
+        </h1>
+        <p className="text-[#555] text-sm leading-relaxed">
+          {isParticipant 
+            ? 'This session is no longer active. You can safely close this tab now.'
+            : 'Open it from the GummyGum hub to play.'}
+        </p>
+        {!isParticipant && (
+          <a href="https://gummygum.app" className="block pt-2">
+            <Button variant="orange" className="w-full">Go to GummyGum</Button>
+          </a>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // Participant-side landing when GummyGum cancels/ends the session out from
 // under them (the room doc disappears while they're not the host). Mirrors
@@ -95,7 +131,7 @@ const GummyGumCancelledScreen = () => {
   }, []);
 
   if (!showMessage) {
-    return <div className="h-screen w-full bg-[#EDEAE4]" />;
+    return <LoadingScreen message="Session ending…" />;
   }
 
   return (
@@ -105,7 +141,7 @@ const GummyGumCancelledScreen = () => {
         <div className="text-4xl">👋</div>
         <h1 className="text-xl font-black">Session ended</h1>
         <p className="text-[#555] text-sm leading-relaxed">
-          This session was cancelled by the host. You can close this tab now.
+          This session was cancelled or ended. You can close this tab now.
         </p>
       </div>
     </div>
@@ -113,7 +149,7 @@ const GummyGumCancelledScreen = () => {
 };
 
 const GameCoordinator = () => {
-  const { gameState, ggSession, ggChecked, createGame } = useGame();
+  const { gameState, ggSession, ggChecked, createGame, isSessionExpired } = useGame();
   const routedRef = React.useRef(false);
 
   // Hosts spectate and never get a `players` entry, so they skip straight
@@ -128,7 +164,7 @@ const GameCoordinator = () => {
   }, [ggSession, createGame]);
 
   if (!ggChecked) {
-    return <div className="h-screen w-full bg-[#EDEAE4]" />;
+    return <LoadingScreen message="Connecting to session…" />;
   }
 
   // GummyGum-launched participant whose room just disappeared (host cancelled
@@ -152,18 +188,19 @@ const GameCoordinator = () => {
         (email && localStorage.getItem(`twotruths_joined_${ggSession.roomCode}_${email}`) === 'true')
       );
       if (alreadyJoined) {
-        return <div className="h-screen w-full bg-[#EDEAE4]" />;
+        return <LoadingScreen message="Reconnecting to your room…" />;
       }
       return <GgAvatarSetupScreen />;
     }
     // Host: waiting for the GummyGum pre-created room to show up.
-    return <div className="h-screen w-full bg-[#EDEAE4]" />;
+    return <LoadingScreen message="Setting up host room…" />;
   }
 
   return (
     <>
       <GameRouteSync />
       <GameShell />
+      {isSessionExpired && <SessionExpiredModal isHost={ggSession?.isHost} />}
     </>
   );
 };

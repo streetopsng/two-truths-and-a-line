@@ -3,6 +3,7 @@ import { useGame } from '../../context/GameContext';
 import { Button } from '../ui/Button';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { AvatarPickerModal } from '../ui/AvatarPickerModal';
+import { GameRulesModal } from '../ui/GameRulesModal';
 
 // Shown to a GummyGum-invited participant right after their name/room code
 // resolve, before they land in the lobby — mirrors HomeScreen's manual join
@@ -15,13 +16,18 @@ export const GgAvatarSetupScreen = () => {
     return (email && localStorage.getItem(`twotruths_avatar_${email}`)) || null;
   });
   const [showPicker, setShowPicker] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
 
   // GummyGum verified player name is the source of truth
   const name = ggSession?.player?.name || (email && localStorage.getItem(`twotruths_name_${email}`)) || 'Guest';
 
-  const handleContinue = async () => {
+  const handleStartJoin = () => {
+    setShowRules(true);
+  };
+
+  const handleConfirmRules = async () => {
     if (joining) return;
     setJoining(true);
     setError('');
@@ -38,6 +44,7 @@ export const GgAvatarSetupScreen = () => {
       console.error('GummyGum avatar setup join failed:', err);
       setError(err?.message || 'Could not join the game.');
       setJoining(false);
+      setShowRules(false);
     }
   };
 
@@ -73,8 +80,8 @@ export const GgAvatarSetupScreen = () => {
           </div>
         )}
 
-        <Button variant="orange" onClick={handleContinue} disabled={joining} className="w-full">
-          {joining ? 'Joining…' : 'Continue to lobby →'}
+        <Button variant="orange" onClick={handleStartJoin} disabled={joining} className="w-full">
+          {joining ? 'Joining…' : 'Continue to game rules →'}
         </Button>
       </div>
 
@@ -83,6 +90,13 @@ export const GgAvatarSetupScreen = () => {
           selectedId={avatarId}
           onSelect={setAvatarId}
           onClose={() => setShowPicker(false)}
+        />
+      )}
+
+      {showRules && (
+        <GameRulesModal
+          name={name}
+          onConfirm={handleConfirmRules}
         />
       )}
     </div>

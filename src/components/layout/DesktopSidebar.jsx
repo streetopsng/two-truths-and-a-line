@@ -127,14 +127,16 @@ export const DesktopSidebar = () => {
         </div>
       </div>
 
-      <div className="pt-4 border-t border-[#E0DBD4] mt-2">
-        <button
-          onClick={() => returnToGummyGum()}
-          className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white border border-[#E0DBD4] text-xs font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
-        >
-          <span>← Back to GummyGum</span>
-        </button>
-      </div>
+      {ggSession?.isHost && (
+        <div className="pt-4 border-t border-[#E0DBD4] mt-2">
+          <button
+            onClick={() => returnToGummyGum()}
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white border border-[#E0DBD4] text-xs font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+          >
+            <span>← Back to GummyGum</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
