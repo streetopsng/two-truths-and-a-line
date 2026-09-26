@@ -362,11 +362,13 @@ export const GameProvider = ({ children }) => {
 
     const code =
       presetCode || Math.random().toString(36).substring(2, 8).toUpperCase();
+    const targetInvited = ggSession?.invitedCount || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('invitedCount') : null);
     const newGame = {
       status: "lobby",
       gameCode: code,
       hostUid: user.uid,
       hostName: playerName || "Host",
+      invitedCount: targetInvited ? parseInt(targetInvited, 10) : null,
       players: {},
       currentRound: 0,
       roundOrder: [],
@@ -442,7 +444,8 @@ export const GameProvider = ({ children }) => {
     if (data.status !== "lobby") throw new Error("Game already started");
 
     const numPlayers = Object.keys(data.players || {}).length;
-    if (numPlayers >= 10) throw new Error("Game is full");
+    const maxLimit = data.invitedCount ? Math.max(data.invitedCount, 50) : 50;
+    if (numPlayers >= maxLimit) throw new Error("Game is full");
 
     await updateDoc(gameRef, {
       [`players.${user.uid}`]: {

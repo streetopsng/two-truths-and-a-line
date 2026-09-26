@@ -16,6 +16,9 @@ export const DesktopSidebar = () => {
 
   const me = players?.[currentUser?.uid];
 
+  const queryInvited = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('invitedCount') : null;
+  const targetInvited = ggSession?.invitedCount || (queryInvited ? parseInt(queryInvited, 10) : null) || gameState?.invitedCount;
+
   return (
     <div className="hidden md:flex flex-col w-[300px] lg:w-[320px] shrink-0 border-r border-[#E0DBD4] bg-white/70 backdrop-blur-md h-full p-6 relative z-20 shadow-[2px_0_12px_rgba(0,0,0,0.03)]">
       {(status === 'question' || status === 'reaction' || status === 'leaderboard') && (
@@ -31,7 +34,7 @@ export const DesktopSidebar = () => {
 
       <div className="flex items-center justify-between mb-3">
         <div className="text-[10px] tracking-[2px] uppercase text-[#999] font-extrabold">
-          Players ({playersList.length}/10)
+          {targetInvited ? `Players (${playersList.length}/${targetInvited})` : `Players (${playersList.length})`}
         </div>
       </div>
 
