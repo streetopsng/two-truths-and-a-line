@@ -149,7 +149,7 @@ const GummyGumCancelledScreen = () => {
 };
 
 const GameCoordinator = () => {
-  const { gameState, ggSession, ggChecked, createGame, isSessionExpired } = useGame();
+  const { gameState, ggSession, ggChecked, createGame, isSessionExpired, setIsSessionExpired, setGameCode } = useGame();
   const routedRef = React.useRef(false);
 
   // Hosts spectate and never get a `players` entry, so they skip straight
@@ -159,9 +159,11 @@ const GameCoordinator = () => {
   useEffect(() => {
     if (!ggSession || !ggSession.roomCode || !ggSession.isHost || routedRef.current) return;
     routedRef.current = true;
+    setIsSessionExpired(false);
+    setGameCode(ggSession.roomCode);
     const name = ggSession.player?.name || 'Guest';
     createGame(name, ggSession.roomCode).catch((err) => console.error('GummyGum auto-create failed', err));
-  }, [ggSession, createGame]);
+  }, [ggSession, createGame, setIsSessionExpired, setGameCode]);
 
   if (!ggChecked) {
     return <LoadingScreen message="Connecting to session…" />;
