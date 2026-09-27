@@ -50,9 +50,14 @@ const MOCK_MODE =
   const getInitialGameCode = () => {
     if (typeof window === "undefined") return "";
     const params = new URLSearchParams(window.location.search);
+    // A GummyGum launch carries its own pin/roomCode/code params alongside
+    // ggt — checking those first (as before) adopted the room code before
+    // resolveGummyGumLaunch() had a chance to route a participant through
+    // GgAvatarSetupScreen, which skipped the avatar + GameRulesModal step
+    // entirely. ggt must win so the resolve effect decides gameCode instead.
+    if (params.get("ggt")) return "";
     const urlCode = params.get("pin") || params.get("roomCode") || params.get("code") || params.get("gameCode");
     if (urlCode) return urlCode.toUpperCase();
-    if (params.get("ggt")) return "";
     return localStorage.getItem("gameCode") || "";
   };
 
@@ -71,7 +76,14 @@ export const GameProvider = ({ children }) => {
     resolveGummyGumLaunch().then((session) => {
       setGgSession(session);
       setGgChecked(true);
-      if (session?.roomCode) {
+      // Host-only: hosts skip straight into their pre-created room with no
+      // avatar step, so gameCode needs to be set immediately. Setting it for
+      // a participant here — before they've actually joined — makes
+      // GameCoordinator's `alreadyJoined` check (localStorage.getItem('gameCode')
+      // === ggSession.roomCode) true on their very first visit, which skips
+      // GgAvatarSetupScreen (avatar + GameRulesModal) entirely. Participants
+      // get gameCode set for real inside joinGame, once they've confirmed.
+      if (session?.roomCode && session.isHost) {
         setGameCode(session.roomCode);
         localStorage.setItem("gameCode", session.roomCode);
         setIsSessionExpired(false);
