@@ -68,6 +68,7 @@ export async function resolveGummyGumLaunch() {
     round: 1,
     reported: false,
   };
+  localStorage.removeItem('gameCode');
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 

@@ -47,13 +47,25 @@ const MOCK_MODE =
   db.app.options.apiKey === "YOUR_API_KEY" ||
   import.meta.env.VITE_MOCK_MODE === "true";
 
+  const getInitialGameCode = () => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search);
+    // A GummyGum launch carries its own pin/roomCode/code params alongside
+    // ggt — checking those first (as before) adopted the room code before
+    // resolveGummyGumLaunch() had a chance to route a participant through
+    // GgAvatarSetupScreen, which skipped the avatar + GameRulesModal step
+    // entirely. ggt must win so the resolve effect decides gameCode instead.
+    if (params.get("ggt")) return "";
+    const urlCode = params.get("pin") || params.get("roomCode") || params.get("code") || params.get("gameCode");
+    if (urlCode) return urlCode.toUpperCase();
+    return localStorage.getItem("gameCode") || "";
+  };
+
 export const GameProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [authReady, setAuthReady] = useState(MOCK_MODE);
   const [authError, setAuthError] = useState(null);
-  const [gameCode, setGameCode] = useState(
-    localStorage.getItem("gameCode") || "",
-  );
+  const [gameCode, setGameCode] = useState(getInitialGameCode);
   const [gameState, setGameState] = useState({ status: "home" });
   const [ggSession, setGgSession] = useState(null);
   const [ggChecked, setGgChecked] = useState(false);
@@ -64,6 +76,18 @@ export const GameProvider = ({ children }) => {
     resolveGummyGumLaunch().then((session) => {
       setGgSession(session);
       setGgChecked(true);
+      // Host-only: hosts skip straight into their pre-created room with no
+      // avatar step, so gameCode needs to be set immediately. Setting it for
+      // a participant here — before they've actually joined — makes
+      // GameCoordinator's `alreadyJoined` check (localStorage.getItem('gameCode')
+      // === ggSession.roomCode) true on their very first visit, which skips
+      // GgAvatarSetupScreen (avatar + GameRulesModal) entirely. Participants
+      // get gameCode set for real inside joinGame, once they've confirmed.
+      if (session?.roomCode && session.isHost) {
+        setGameCode(session.roomCode);
+        localStorage.setItem("gameCode", session.roomCode);
+        setIsSessionExpired(false);
+      }
     });
   }, []);
 
@@ -130,7 +154,7 @@ export const GameProvider = ({ children }) => {
       (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
-          if (data.status === 'expired' || data.status === 'Ended') {
+          if (data.status === 'expired') {
             setIsSessionExpired(true);
           }
           if (data.status === 'lobby' && data.createdAt && Date.now() - data.createdAt >= 20 * 60 * 1000) {
@@ -138,13 +162,8 @@ export const GameProvider = ({ children }) => {
           }
           setGameState({ id: docSnap.id, ...data });
         } else {
-          localStorage.removeItem("gameCode");
-          setGameCode("");
-          if (ggSession) {
-            setIsSessionExpired(true);
-          } else {
-            setGameState({ status: "home" });
-          }
+          // Document does not exist (may still be creating or stale code). Do NOT falsely mark as expired!
+          setGameState({ status: "home" });
         }
       },
       (error) => {
@@ -369,14 +388,22 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
+    setIsSessionExpired(false);
     const user = await ensureUser();
 
     if (presetCode) {
       const existingSnap = await getDoc(doc(db, "games", presetCode));
       if (existingSnap.exists()) {
-        localStorage.setItem("gameCode", presetCode);
-        setGameCode(presetCode);
-        return;
+        const existingData = existingSnap.data();
+        const isStale =
+          existingData.status === 'expired' ||
+          existingData.status === 'Ended' ||
+          (existingData.status === 'lobby' && existingData.createdAt && Date.now() - existingData.createdAt >= 20 * 60 * 1000);
+        if (!isStale) {
+          localStorage.setItem("gameCode", presetCode);
+          setGameCode(presetCode);
+          return;
+        }
       }
     }
 
@@ -401,6 +428,7 @@ export const GameProvider = ({ children }) => {
 
     localStorage.setItem("gameCode", code);
     setGameCode(code);
+    setIsSessionExpired(false);
   };
 
   const joinGame = async (code, playerName, avatarId = null) => {
@@ -667,6 +695,7 @@ export const GameProvider = ({ children }) => {
         ggChecked,
         isSessionExpired,
         setIsSessionExpired,
+        setGameCode,
         createGame,
         joinGame,
         leaveGame,
