@@ -19,6 +19,7 @@ import {
   resolveGummyGumLaunch,
   reportGummyGumResult,
   returnToGummyGum,
+  getGummyGumSession,
 } from "../lib/gummygumSession";
 import {
   authReady as authReadyPromise,
@@ -50,12 +51,12 @@ const MOCK_MODE =
   const getInitialGameCode = () => {
     if (typeof window === "undefined") return "";
     const params = new URLSearchParams(window.location.search);
-    // A GummyGum launch carries its own pin/roomCode/code params alongside
-    // ggt — checking those first (as before) adopted the room code before
-    // resolveGummyGumLaunch() had a chance to route a participant through
-    // GgAvatarSetupScreen, which skipped the avatar + GameRulesModal step
-    // entirely. ggt must win so the resolve effect decides gameCode instead.
-    if (params.get("ggt")) return "";
+    // ggt in the URL, or a ggSession already resolved earlier this tab
+    // (survives a refresh even after ggt itself is stripped from the URL)
+    // both mean the async resolve effect below decides gameCode instead —
+    // trusting the raw pin/roomCode/code params here would adopt the room
+    // before a participant's actually joined, skipping GgAvatarSetupScreen.
+    if (params.get("ggt") || getGummyGumSession()) return "";
     const urlCode = params.get("pin") || params.get("roomCode") || params.get("code") || params.get("gameCode");
     if (urlCode) return urlCode.toUpperCase();
     return localStorage.getItem("gameCode") || "";
