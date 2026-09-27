@@ -118,8 +118,11 @@ export const LobbyScreen = ({ onWrite }) => {
                 className="px-2.5 py-1 rounded-[8px] text-xs font-extrabold border bg-[#F0FFF5] text-[#22A855] border-[#22A855]/30 hover:bg-[#E0F8E8] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                 title="Change or edit your statements"
               >
-                <span>✓ Ready</span>
-                <span className="text-[10px] text-[#22A855] underline">Edit ✏️</span>
+                <span className="flex items-center gap-1">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path d="M20 6 9 17l-5-5" /></svg>
+                  Ready
+                </span>
+                <span className="text-[10px] text-[#22A855] underline">Edit</span>
               </button>
             ) : (
               <button
@@ -201,7 +204,8 @@ export const LobbyScreen = ({ onWrite }) => {
                 <div className="text-xs shrink-0">
                   {p.submitted ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-extrabold bg-[#F0FFF5] text-[#22A855] border border-[#22A855]/30">
-                      ✓ Ready
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path d="M20 6 9 17l-5-5" /></svg>
+                      Ready
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-bold bg-[#FFF0EE] text-[#E8334A] border border-[#E8334A]/30">
@@ -238,12 +242,15 @@ export const LobbyScreen = ({ onWrite }) => {
       {/* Action Footer */}
       <div className="flex flex-col gap-2.5 pt-2 shrink-0">
         {!isHost && (
-          <Button 
-            variant={me?.submitted ? 'outline' : 'orange'} 
+          <Button
+            variant={me?.submitted ? 'outline' : 'orange'}
             onClick={handleWriteClick}
             className="w-full rounded-xl cursor-pointer"
           >
-            {me?.submitted ? '✏️ Edit my statements' : '✍️ Write my statements'}
+            <span className="inline-flex items-center justify-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              {me?.submitted ? 'Edit my statements' : 'Write my statements'}
+            </span>
           </Button>
         )}
 

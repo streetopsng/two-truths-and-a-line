@@ -86,7 +86,12 @@ export const DesktopSidebar = () => {
                   {status !== 'lobby' && (
                     <div className="text-[11px] font-extrabold text-[#555] mt-0.5">
                       {Math.round(p.score || 0)} pts
-                      {p.streak >= 2 && <span className="text-[#E8710A] ml-1.5">🔥{p.streak}</span>}
+                      {p.streak >= 2 && (
+                        <span className="inline-flex items-center gap-0.5 text-[#E8710A] ml-1.5">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-1.2 3-3.2 4.3-3.2 7.3a3.2 3.2 0 0 0 6.4 0c0-1-.3-1.8-.7-2.5 1.6 1.2 2.5 3 2.5 5.2a5 5 0 1 1-10 0c0-4.3 3.2-6.6 5-10Z" /></svg>
+                          {p.streak}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -94,7 +99,8 @@ export const DesktopSidebar = () => {
                   <div className="shrink-0 flex items-center justify-center">
                     {p.submitted ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-extrabold bg-[#F0FFF5] text-[#22A855] border border-[#22A855]/30">
-                        ✓ Ready
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path d="M20 6 9 17l-5-5" /></svg>
+                        Ready
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-[8px] text-[10.5px] font-bold bg-[#FFF0EE] text-[#E8334A] border border-[#E8334A]/30" title="Statement not added">
