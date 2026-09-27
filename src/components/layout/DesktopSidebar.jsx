@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
-import { returnToGummyGum } from '../../lib/gummygumSession';
+import { Button } from '../ui/Button';
+import { returnToGummyGum, reportGummyGumCancel } from '../../lib/gummygumSession';
 
 export const DesktopSidebar = () => {
   const { gameState, currentUser, ggSession } = useGame();
   const { players, gameCode, status, currentRound, roundOrder } = gameState;
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   if (status === 'home' || !gameCode) return null;
 
@@ -130,11 +132,38 @@ export const DesktopSidebar = () => {
       {ggSession?.isHost && (
         <div className="pt-4 border-t border-[#E0DBD4] mt-2">
           <button
-            onClick={() => returnToGummyGum()}
+            onClick={() => setShowCancelModal(true)}
             className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white border border-[#E0DBD4] text-xs font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
           >
             <span>← Back to GummyGum</span>
           </button>
+        </div>
+      )}
+
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border-2 border-[#E0DBD4] rounded-[20px] p-6 max-w-sm w-full text-center shadow-2xl">
+            <h3 className="text-lg font-black text-[#1A1A1A] mb-2">Cancel Session?</h3>
+            <p className="text-xs text-[#666] mb-6 leading-relaxed">
+              This will close the session for all connected players and return you to GummyGum.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowCancelModal(false)} className="flex-1 rounded-xl">
+                Stay
+              </Button>
+              <Button
+                variant="orange"
+                onClick={async () => {
+                  setShowCancelModal(false);
+                  await reportGummyGumCancel();
+                  returnToGummyGum();
+                }}
+                className="flex-1 !bg-red-500 hover:!bg-red-600 !text-white rounded-xl"
+              >
+                Exit to Hub
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

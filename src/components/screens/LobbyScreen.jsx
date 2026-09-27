@@ -4,6 +4,7 @@ import { useGame } from '../../context/GameContext';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
+import { FloatingTips } from '../ui/FloatingTips';
 import { returnToGummyGum, reportGummyGumCancel } from '../../lib/gummygumSession';
 
 export const LobbyScreen = ({ onWrite }) => {
@@ -44,8 +45,8 @@ export const LobbyScreen = ({ onWrite }) => {
 
   return (
     <div className="flex flex-col h-full max-w-[440px] md:max-w-[520px] mx-auto justify-between relative z-10 p-4 sm:p-6 animate-fadeUp">
-      {/* Top action bar */}
-      <div className="flex items-center justify-between px-1 pb-1 shrink-0">
+      {/* Top action bar — mobile only; the same control lives in DesktopSidebar at md: */}
+      <div className="flex md:hidden items-center justify-between px-1 pb-1 shrink-0">
         {isHost ? (
           <button
             onClick={() => setShowCancelModal(true)}
@@ -138,7 +139,7 @@ export const LobbyScreen = ({ onWrite }) => {
           <div className="text-[11px] font-black uppercase tracking-[1.5px] text-[#999] mb-2">
             How It Works
           </div>
-          <div className="space-y-2 text-xs text-[#555]">
+          <div className="space-y-2 text-xs text-[#555] max-h-[180px] overflow-y-auto pr-1">
             <div className="flex items-start gap-2">
               <span className="w-5 h-5 rounded-full bg-[#FAF7F2] border border-[#E0DBD4] text-[#F5821F] font-bold text-[11px] flex items-center justify-center shrink-0">1</span>
               <span>Each player writes <strong>2 true statements</strong> and <strong>1 lie</strong> about themselves.</span>
@@ -298,6 +299,8 @@ export const LobbyScreen = ({ onWrite }) => {
           </div>
         </div>
       )}
+
+      <FloatingTips />
     </div>
   );
 };
