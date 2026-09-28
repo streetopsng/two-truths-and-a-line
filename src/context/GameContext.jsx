@@ -140,6 +140,7 @@ export const GameProvider = ({ children }) => {
   }, []);
 
   const [isSessionExpired, setIsSessionExpired] = useState(false);
+  const gameDocSeenRef = useRef(false);
 
   // 2. Listen to Firestore Game Document (or mock it)
   useEffect(() => {
@@ -150,10 +151,13 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
+    gameDocSeenRef.current = false;
+
     const unsub = onSnapshot(
       doc(db, "games", gameCode),
       (docSnap) => {
         if (docSnap.exists()) {
+          gameDocSeenRef.current = true;
           const data = docSnap.data();
           if (data.status === 'expired') {
             setIsSessionExpired(true);
@@ -161,7 +165,16 @@ export const GameProvider = ({ children }) => {
           if (data.status === 'lobby' && data.createdAt && Date.now() - data.createdAt >= 20 * 60 * 1000) {
             setIsSessionExpired(true);
           }
+          // 'Ended' = GummyGum dashboard force-end; the host drives their own
+          // exit through the UI instead, so only reroute other participants.
+          if (data.status === 'Ended' && !ggSession?.isHost) {
+            setGameState({ status: 'gg-cancelled' });
+            return;
+          }
           setGameState({ id: docSnap.id, ...data });
+        } else if (gameDocSeenRef.current && !ggSession?.isHost) {
+          // Room existed and just vanished — host cancelled/exited, not a stale/unused code.
+          setGameState({ status: 'gg-cancelled' });
         } else {
           // Document does not exist (may still be creating or stale code). Do NOT falsely mark as expired!
           setGameState({ status: "home" });
