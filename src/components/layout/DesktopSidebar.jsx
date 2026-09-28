@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
-import { returnToGummyGum } from '../../lib/gummygumSession';
+import { Button } from '../ui/Button';
+import { returnToGummyGum, reportGummyGumCancel } from '../../lib/gummygumSession';
 
 export const DesktopSidebar = () => {
   const { gameState, currentUser, ggSession } = useGame();
   const { players, gameCode, status, currentRound, roundOrder } = gameState;
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   if (status === 'home' || !gameCode) return null;
 
@@ -84,7 +86,12 @@ export const DesktopSidebar = () => {
                   {status !== 'lobby' && (
                     <div className="text-[11px] font-extrabold text-[#555] mt-0.5">
                       {Math.round(p.score || 0)} pts
-                      {p.streak >= 2 && <span className="text-[#E8710A] ml-1.5">🔥{p.streak}</span>}
+                      {p.streak >= 2 && (
+                        <span className="inline-flex items-center gap-0.5 text-[#E8710A] ml-1.5">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-1.2 3-3.2 4.3-3.2 7.3a3.2 3.2 0 0 0 6.4 0c0-1-.3-1.8-.7-2.5 1.6 1.2 2.5 3 2.5 5.2a5 5 0 1 1-10 0c0-4.3 3.2-6.6 5-10Z" /></svg>
+                          {p.streak}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -92,7 +99,8 @@ export const DesktopSidebar = () => {
                   <div className="shrink-0 flex items-center justify-center">
                     {p.submitted ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-extrabold bg-[#F0FFF5] text-[#22A855] border border-[#22A855]/30">
-                        ✓ Ready
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path d="M20 6 9 17l-5-5" /></svg>
+                        Ready
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-[8px] text-[10.5px] font-bold bg-[#FFF0EE] text-[#E8334A] border border-[#E8334A]/30" title="Statement not added">
@@ -130,11 +138,38 @@ export const DesktopSidebar = () => {
       {ggSession?.isHost && (
         <div className="pt-4 border-t border-[#E0DBD4] mt-2">
           <button
-            onClick={() => returnToGummyGum()}
+            onClick={() => setShowCancelModal(true)}
             className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white border border-[#E0DBD4] text-xs font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
           >
             <span>← Back to GummyGum</span>
           </button>
+        </div>
+      )}
+
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border-2 border-[#E0DBD4] rounded-[20px] p-6 max-w-sm w-full text-center shadow-2xl">
+            <h3 className="text-lg font-black text-[#1A1A1A] mb-2">Cancel Session?</h3>
+            <p className="text-xs text-[#666] mb-6 leading-relaxed">
+              This will close the session for all connected players and return you to GummyGum.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowCancelModal(false)} className="flex-1 rounded-xl">
+                Stay
+              </Button>
+              <Button
+                variant="orange"
+                onClick={async () => {
+                  setShowCancelModal(false);
+                  await reportGummyGumCancel();
+                  returnToGummyGum();
+                }}
+                className="flex-1 !bg-red-500 hover:!bg-red-600 !text-white rounded-xl"
+              >
+                Exit to Hub
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
