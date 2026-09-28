@@ -141,7 +141,8 @@ export const DesktopSidebar = () => {
             onClick={() => setShowCancelModal(true)}
             className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white border border-[#E0DBD4] text-xs font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
           >
-            <span>← Back to GummyGum</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" /></svg>
+            <span>Back to GummyGum</span>
           </button>
         </div>
       )}

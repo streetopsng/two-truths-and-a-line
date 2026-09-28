@@ -56,7 +56,9 @@ export const HomeScreen = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowGateModal(false)} />
           <div className="relative bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] p-8 max-w-sm w-full text-center shadow-2xl animate-fadeUp z-10">
-            <div className="text-4xl animate-float mb-2">🔒</div>
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#FDE8D0] border border-[#F5821F]/30 text-[#F5821F] flex items-center justify-center animate-float mb-2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+            </div>
             <h3 className="text-xl font-black text-[#1A1A1A] mb-2">Not available here</h3>
             <p className="text-sm text-[#555] mb-6 leading-relaxed">
               This experience is only available through GummyGum. Head back to the hub to launch it.
@@ -76,7 +78,8 @@ export const HomeScreen = () => {
                 onClick={() => { setShowJoin(false); setError(''); }}
                 className="text-[14px] font-bold text-[#555] hover:text-[#1A1A1A] transition-colors flex items-center gap-1.5 cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]"
               >
-                ← Back
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" /></svg>
+                Back
               </button>
               <span className="text-xs font-black text-[#F5821F] tracking-wider uppercase">GummyGum</span>
             </div>
@@ -90,7 +93,7 @@ export const HomeScreen = () => {
                 <p className="text-[14px] text-[#555] mt-1.5 font-medium">Enter the code provided by your host.</p>
               </div>
 
-              <div className="card p-6 flex flex-col gap-4 bg-white border-[1.5px] border-[#E0DBD4] shadow-[0_4px_0_#E0DBD4] rounded-[20px]">
+              <div className="card p-6 flex flex-col gap-4 bg-white border-[1.5px] border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4] rounded-[20px]">
                 <div>
                   <div className="text-[11px] font-extrabold tracking-[1.5px] uppercase text-[#555] mb-2">
                     Game Code
@@ -161,7 +164,10 @@ export const HomeScreen = () => {
                 )}
 
                 <Button onClick={handleJoin} className="mt-2 w-full">
-                  Join Lobby →
+                  <span className="inline-flex items-center justify-center gap-2">
+                    Join Lobby
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 5l7 7-7 7" /></svg>
+                  </span>
                 </Button>
               </div>
             </div>
@@ -197,7 +203,7 @@ export const HomeScreen = () => {
                   className="absolute bg-white rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] flex flex-col items-center justify-center p-2.5 gap-1"
                   style={{ width: '84px', left: '16px', top: '48px', transform: 'rotate(-8deg)' }}
                 >
-                  <div className="text-[28px] leading-none">🦊</div>
+                  <div className="w-7 h-7 rounded-full bg-[#FDE8D0] border-[1.5px] border-[#F5821F] text-[#1A1A1A] flex items-center justify-center text-[10px] font-extrabold">CH</div>
                   <div className="text-[9px] font-extrabold tracking-wider text-[#aaa] uppercase">Chidinma</div>
                   <div className="h-[4px] rounded-full bg-[#F0EDE8] w-full overflow-hidden">
                     <div className="h-full rounded-full bg-[#F5821F]" style={{ width: '70%' }}></div>
@@ -212,7 +218,7 @@ export const HomeScreen = () => {
                   className="absolute bg-white rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] flex flex-col items-center justify-center p-2.5 gap-1"
                   style={{ width: '84px', right: '16px', top: '38px', transform: 'rotate(7deg)' }}
                 >
-                  <div className="text-[28px] leading-none">🐻</div>
+                  <div className="w-7 h-7 rounded-full bg-[#FDE8D0] border-[1.5px] border-[#F5821F] text-[#1A1A1A] flex items-center justify-center text-[10px] font-extrabold">EM</div>
                   <div className="text-[9px] font-extrabold tracking-wider text-[#aaa] uppercase">Emeka</div>
                   <div className="h-[4px] rounded-full bg-[#F0EDE8] w-full overflow-hidden">
                     <div className="h-full rounded-full bg-[#3b82f6]" style={{ width: '80%' }}></div>
@@ -227,7 +233,7 @@ export const HomeScreen = () => {
                   className="absolute bg-white rounded-[14px] shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center p-2 gap-1 opacity-90 hidden sm:flex"
                   style={{ width: '76px', left: '55px', top: '110px', transform: 'rotate(3deg)' }}
                 >
-                  <div className="text-[24px] leading-none">🐯</div>
+                  <div className="w-6 h-6 rounded-full bg-[#FDE8D0] border-[1.5px] border-[#F5821F] text-[#1A1A1A] flex items-center justify-center text-[9px] font-extrabold">ZA</div>
                   <div className="text-[8px] font-extrabold tracking-wider text-[#aaa] uppercase">Zara</div>
                   <div className="h-[3px] rounded-full bg-[#F0EDE8] w-full">
                     <div className="h-full rounded-full bg-[#a855f7]" style={{ width: '60%' }}></div>
@@ -239,7 +245,7 @@ export const HomeScreen = () => {
                   className="absolute bg-white rounded-[14px] shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center p-2 gap-1 opacity-90 hidden sm:flex"
                   style={{ width: '76px', right: '55px', top: '115px', transform: 'rotate(-5deg)' }}
                 >
-                  <div className="text-[24px] leading-none">🦁</div>
+                  <div className="w-6 h-6 rounded-full bg-[#FDE8D0] border-[1.5px] border-[#F5821F] text-[#1A1A1A] flex items-center justify-center text-[9px] font-extrabold">KE</div>
                   <div className="text-[8px] font-extrabold tracking-wider text-[#aaa] uppercase">Kelvin</div>
                   <div className="h-[3px] rounded-full bg-[#F0EDE8] w-full">
                     <div className="h-full rounded-full bg-[#22c55e]" style={{ width: '65%' }}></div>

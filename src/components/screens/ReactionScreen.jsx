@@ -14,11 +14,11 @@ export const ReactionScreen = () => {
   const perfect = totalVoters > 0 && fooled === totalVoters;
   const gotMe = totalVoters - fooled;
 
-  const title = perfect 
-    ? 'Nobody caught you! 😈' 
-    : fooled > gotMe 
-      ? 'You fooled most of them! 😏' 
-      : 'They got you! 😅';
+  const title = perfect
+    ? 'Nobody caught you!'
+    : fooled > gotMe
+      ? 'You fooled most of them!'
+      : 'They got you!';
 
   const subtitle = totalVoters > 0
     ? `${fooled} out of ${totalVoters} players fell for the lie. ${gotMe} spotted it.`
@@ -56,9 +56,11 @@ export const ReactionScreen = () => {
   if (!isMe) {
     return (
       <div className="flex flex-col h-full max-w-[430px] mx-auto justify-center items-center p-6 text-center animate-fadeUp relative z-10">
-        <div className="card p-8 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] flex flex-col items-center gap-3 w-full">
-          <div className="text-[48px] animate-bounce mb-1">
-            {subject?.lastReaction || '⏳'}
+        <div className="card p-8 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_2px_0_#E0DBD4] flex flex-col items-center gap-3 w-full">
+          <div className="text-[48px] animate-bounce mb-1 flex items-center justify-center">
+            {subject?.lastReaction || (
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="text-[#bbb]"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+            )}
           </div>
           <div className="text-[18px] font-black text-[#1A1A1A]">
             Waiting for {subject?.name || 'player'}'s reaction...
@@ -81,7 +83,7 @@ export const ReactionScreen = () => {
 
   return (
     <div className="flex flex-col h-full max-w-[430px] md:max-w-[480px] mx-auto justify-center items-center p-6 relative z-10 animate-fadeUp">
-      <div className="card p-6 sm:p-8 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] flex flex-col items-center text-center w-full">
+      <div className="card p-6 sm:p-8 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_2px_0_#E0DBD4] flex flex-col items-center text-center w-full">
         <h2 className="text-[22px] font-black text-[#1A1A1A] tracking-tight">
           {title}
         </h2>

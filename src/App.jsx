@@ -14,22 +14,34 @@ import { GgAvatarSetupScreen } from './components/screens/GgAvatarSetupScreen';
 
 import { DesktopSidebar } from './components/layout/DesktopSidebar';
 
-const BG_ICONS = ['🤥', '🏆', '🎯', '💡', '🎭', '🔮', '😅', '🎪', '🧠', '🎲', '💬', '🤔'];
 const ICON_POSITIONS = [
   [20, 40], [180, 20], [320, 80], [60, 200], [260, 160], [140, 320], [340, 260],
   [30, 380], [200, 400], [380, 360], [100, 500], [290, 480], [50, 580], [320, 540],
 ];
 
+// Flat line icons standing in for the old emoji watermark texture.
+const BG_ICON_PATHS = [
+  <><path d="M8 3h8v4a4 4 0 0 1-8 0V3Z" /><path d="M5 4H3v2a3 3 0 0 0 3 3" /><path d="M19 4h2v2a3 3 0 0 1-3 3" /><path d="M9 17h6" /><path d="M12 12v5" /><path d="M9 21h6" /></>,
+  <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /></>,
+  <><path d="M9 18h6" /><path d="M10 21h4" /><path d="M12 2a7 7 0 0 0-4 12.6c.6.5 1 1.3 1 2.4h6c0-1.1.4-1.9 1-2.4A7 7 0 0 0 12 2Z" /></>,
+  <><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="8.5" cy="8.5" r="1.1" fill="currentColor" stroke="none" /><circle cx="15.5" cy="8.5" r="1.1" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" /><circle cx="8.5" cy="15.5" r="1.1" fill="currentColor" stroke="none" /><circle cx="15.5" cy="15.5" r="1.1" fill="currentColor" stroke="none" /></>,
+  <path d="M4 5h16v11H8l-4 4V5Z" />,
+  <path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6L12 3Z" />,
+  <><circle cx="12" cy="12" r="9" /><path d="M9.2 9a2.8 2.8 0 1 1 4.6 2.1c-.7.6-1.3 1-1.3 2.2" /><path d="M12 17v.01" /></>,
+  <path d="M12 20s-7-4.4-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 5c-2.5 4.6-9.5 9-9.5 9Z" />,
+];
+
 const BackgroundTexture = () => (
   <div className="bg-texture pointer-events-none">
     {ICON_POSITIONS.map(([x, y], i) => (
-      <div 
-        key={i} 
+      <svg
+        key={i}
         className="bg-icon select-none"
         style={{ left: `${x}px`, top: `${y}px` }}
+        width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}
       >
-        {BG_ICONS[i % BG_ICONS.length]}
-      </div>
+        {BG_ICON_PATHS[i % BG_ICON_PATHS.length]}
+      </svg>
     ))}
   </div>
 );
@@ -72,9 +84,9 @@ import { SessionExpiredModal } from './components/ui/SessionExpiredModal';
 const LoadingScreen = ({ message = "Connecting to session…" }) => (
   <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex flex-col items-center justify-center p-6 relative overflow-hidden">
     <BackgroundTexture />
-    <div className="card max-w-xs w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[24px] shadow-[0_4px_0_#E0DBD4] relative z-10 flex flex-col items-center animate-fadeUp">
-      <div className="w-14 h-14 rounded-2xl bg-[#FDE8D0] border border-[#F5821F]/30 flex items-center justify-center text-2xl shadow-xs">
-        <span className="text-2xl animate-pulse">🤫</span>
+    <div className="card max-w-xs w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[24px] shadow-[0_2px_0_#E0DBD4] relative z-10 flex flex-col items-center animate-fadeUp">
+      <div className="w-14 h-14 rounded-2xl bg-[#FDE8D0] border border-[#F5821F]/30 flex items-center justify-center text-[#F5821F] shadow-xs">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="animate-spin"><circle cx="12" cy="12" r="9" opacity="0.25" /><path d="M21 12a9 9 0 0 0-9-9" /></svg>
       </div>
       <div>
         <h3 className="text-[15px] font-black text-[#1A1A1A]">{message}</h3>
@@ -97,8 +109,14 @@ const GummyGumLockedScreen = () => {
   return (
     <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex items-center justify-center px-6 relative">
       <BackgroundTexture />
-      <div className="card max-w-sm w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] relative z-10">
-        <div className="text-4xl animate-float">{isParticipant ? '🏁' : '🔒'}</div>
+      <div className="card max-w-sm w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_2px_0_#E0DBD4] relative z-10">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#FDE8D0] border border-[#F5821F]/30 text-[#F5821F] flex items-center justify-center animate-float">
+          {isParticipant ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M5 3v18" strokeLinecap="round" /><path d="M5 4h13l-2.5 3.5L18 11H5" strokeLinejoin="round" /></svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+          )}
+        </div>
         <h1 className="text-xl font-black">
           {isParticipant ? 'Session concluded' : 'This experience is only available through GummyGum'}
         </h1>
@@ -137,8 +155,10 @@ const GummyGumCancelledScreen = () => {
   return (
     <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex items-center justify-center px-6 relative">
       <BackgroundTexture />
-      <div className="card max-w-sm w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] relative z-10">
-        <div className="text-4xl">👋</div>
+      <div className="card max-w-sm w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_2px_0_#E0DBD4] relative z-10">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#FDE8D0] border border-[#F5821F]/30 text-[#F5821F] flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="m20 6-11 11-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </div>
         <h1 className="text-xl font-black">Session ended</h1>
         <p className="text-[#555] text-sm leading-relaxed">
           This session was cancelled or ended. You can close this tab now.

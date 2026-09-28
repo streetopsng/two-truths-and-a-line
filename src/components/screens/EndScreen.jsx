@@ -3,6 +3,14 @@ import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { closeGummyGumSession, returnToGummyGum } from '../../lib/gummygumSession';
 
+const REACTION_ICONS = [
+  { id: 'fire', path: <path d="M12 2c-1.2 3-3.2 4.3-3.2 7.3a3.2 3.2 0 0 0 6.4 0c0-1-.3-1.8-.7-2.5 1.6 1.2 2.5 3 2.5 5.2a5 5 0 1 1-10 0c0-4.3 3.2-6.6 5-10Z" fill="currentColor" stroke="none" /> },
+  { id: 'laugh', path: <><circle cx="12" cy="12" r="9" /><path d="M8 10h.01M16 10h.01M8 13.5c1 1.5 2.5 2.2 4 2.2s3-.7 4-2.2" strokeLinecap="round" /></> },
+  { id: 'shock', path: <><circle cx="12" cy="12" r="9" /><path d="M8.5 9v.01M15.5 9v.01" strokeLinecap="round" strokeWidth={2.4} /><circle cx="12" cy="15" r="1.7" /></> },
+  { id: 'clap', path: <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.3a2 2 0 0 0 2-1.7l1.4-9a2 2 0 0 0-2-2.3H14ZM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" strokeLinejoin="round" /> },
+  { id: 'crown', path: <path d="M3 18h18l-1.5-9-4.5 4-3-6-3 6-4.5-4L3 18Z" strokeLinejoin="round" /> },
+];
+
 export const EndScreen = () => {
   const { gameState, leaveGame, ggSession } = useGame();
   const { players } = gameState;
@@ -51,7 +59,12 @@ export const EndScreen = () => {
           onClick={handleLeave}
           className="text-[12px] font-extrabold uppercase tracking-wider text-[#555] hover:text-[#1A1A1A] cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]"
         >
-          {ggSession?.isHost ? '← End session' : 'Close tab'}
+          {ggSession?.isHost ? (
+            <span className="inline-flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" /></svg>
+              End session
+            </span>
+          ) : 'Close tab'}
         </button>
         <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#E8710A]">
           Game Over
@@ -79,9 +92,9 @@ export const EndScreen = () => {
         {podiumPlayers.map((p, i) => {
           if (!p) return null;
           const config = [
-            { cls: 'h-[64px] bg-[#9ca3af] text-white shadow-[0_4px_0_#6b7280]', medal: '🥈', label: '2nd' },
-            { cls: 'h-[86px] bg-[#F5821F] text-[#1A1A1A] shadow-[0_4px_0_#E8710A]', medal: '🥇', label: '1st' },
-            { cls: 'h-[48px] bg-[#b87333] text-white shadow-[0_4px_0_#8B5A2B]', medal: '🥉', label: '3rd' }
+            { cls: 'h-[64px] bg-[#9ca3af] text-white shadow-[0_3px_0_#6b7280]', label: '2nd' },
+            { cls: 'h-[86px] bg-[#F5821F] text-[#1A1A1A] shadow-[0_3px_0_#E8710A]', label: '1st' },
+            { cls: 'h-[48px] bg-[#b87333] text-white shadow-[0_3px_0_#8B5A2B]', label: '3rd' }
           ][i];
           
           return (
@@ -97,7 +110,7 @@ export const EndScreen = () => {
                 {p.name}
               </div>
               <div className={`w-full rounded-t-[8px] flex flex-col items-center justify-center font-black ${config.cls}`}>
-                <span className="text-[18px] leading-none">{config.medal}</span>
+                <span className="text-[15px] leading-none tracking-tight">{config.label}</span>
                 <span className="text-[10px] mt-0.5">{Math.round(p.score || 0)} pts</span>
               </div>
             </div>
@@ -108,15 +121,15 @@ export const EndScreen = () => {
       {/* Badges strip */}
       <div className="flex gap-2 justify-center flex-wrap shrink-0 relative z-10 my-2">
         <div className="flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-white border border-[#E0DBD4] text-[12px] font-bold shadow-[0_2px_0_#E0DBD4]">
-          😈 Best Liar: <strong className="text-[#E8710A] ml-1">{bestLiar?.name || '—'}</strong>
+          Best Liar: <strong className="text-[#E8710A] ml-1">{bestLiar?.name || '—'}</strong>
         </div>
         <div className="flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-white border border-[#E0DBD4] text-[12px] font-bold shadow-[0_2px_0_#E0DBD4]">
-          🕵️ Top Detective: <strong className="text-[#22A855] ml-1">{lieDetector?.name || '—'}</strong>
+          Top Detective: <strong className="text-[#22A855] ml-1">{lieDetector?.name || '—'}</strong>
         </div>
       </div>
 
       {/* Final standings list */}
-      <div className="flex-1 overflow-y-auto bg-white border-[1.5px] border-[#E0DBD4] rounded-[16px] p-3.5 shadow-[0_3px_0_#E0DBD4] my-2 relative z-10">
+      <div className="flex-1 overflow-y-auto bg-white border-[1.5px] border-[#E0DBD4] rounded-[16px] p-3.5 shadow-[0_2px_0_#E0DBD4] my-2 relative z-10">
         <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#999] mb-2 px-1">
           Final Standings
         </div>
@@ -138,17 +151,18 @@ export const EndScreen = () => {
         </div>
       </div>
 
-      {/* Emoji reactions bar */}
+      {/* Reactions bar */}
       <div className="flex gap-2.5 justify-center py-2 shrink-0 relative z-10">
-        {['🔥', '😂', '😱', '👏', '👑'].map((emoji, i) => (
-          <button 
-            key={i}
-            onClick={() => handleRxn(emoji)}
-            className={`text-[20px] bg-white border-[1.5px] border-[#E0DBD4] rounded-full w-[42px] h-[42px] flex items-center justify-center cursor-pointer shadow-[0_3px_0_#E0DBD4] transition-all active:translate-y-[2px] ${
-              activeRxn === emoji ? 'scale-125 border-[#F5821F]' : 'hover:border-[#F5821F]'
+        {REACTION_ICONS.map(({ id, path }) => (
+          <button
+            key={id}
+            onClick={() => handleRxn(id)}
+            aria-label={id}
+            className={`bg-white border-[1.5px] border-[#E0DBD4] rounded-full w-[42px] h-[42px] flex items-center justify-center cursor-pointer shadow-[0_2px_0_#E0DBD4] transition-all active:translate-y-[2px] text-[#555] ${
+              activeRxn === id ? 'scale-125 border-[#F5821F] text-[#F5821F]' : 'hover:border-[#F5821F]'
             }`}
           >
-            {emoji}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>{path}</svg>
           </button>
         ))}
       </div>
