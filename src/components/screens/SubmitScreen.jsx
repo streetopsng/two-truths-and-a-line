@@ -61,7 +61,7 @@ export const SubmitScreen = ({ onSubmitted }) => {
         return;
       }
       if (s.lieIndex === -1) {
-        setError(sets.length > 1 ? `Set ${i + 1}: mark which one is the lie 🤫` : 'Mark which one is the lie 🤫');
+        setError(sets.length > 1 ? `Set ${i + 1}: mark which one is the lie` : 'Mark which one is the lie');
         return;
       }
     }
@@ -108,9 +108,10 @@ export const SubmitScreen = ({ onSubmitted }) => {
                 {setIdx > 0 && (
                   <button
                     onClick={() => removeSet(setIdx)}
-                    className="text-[11px] font-bold text-[#E8334A] hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#E8334A] hover:underline cursor-pointer"
                   >
-                    ✕ Remove
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" d="M6 6l12 12M18 6 6 18" /></svg>
+                    Remove
                   </button>
                 )}
               </div>
@@ -123,8 +124,8 @@ export const SubmitScreen = ({ onSubmitted }) => {
                   key={i}
                   className={`rounded-[16px] p-4 transition-all duration-200 border-[1.5px] ${
                     isLie
-                      ? 'bg-white border-[#F5821F] shadow-[0_3px_0_#E8710A]'
-                      : 'bg-[#FAF7F2] border-[#E0DBD4] shadow-[0_3px_0_#E0DBD4]'
+                      ? 'bg-white border-[#F5821F] shadow-[0_2px_0_#E8710A]'
+                      : 'bg-[#FAF7F2] border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]'
                   }`}
                 >
                   <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#999] mb-1.5">
@@ -153,10 +154,12 @@ export const SubmitScreen = ({ onSubmitted }) => {
                           : 'bg-white border-[#E0DBD4]'
                       }`}
                     >
-                      {isLie && '✓'}
+                      {isLie && (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path d="M20 6 9 17l-5-5" /></svg>
+                      )}
                     </div>
                     <div className={`text-[12px] font-bold ${isLie ? 'text-[#E8710A]' : 'text-[#555]'}`}>
-                      This is the lie 🤫
+                      This is the lie
                     </div>
                   </div>
                 </div>
@@ -190,7 +193,14 @@ export const SubmitScreen = ({ onSubmitted }) => {
           onClick={() => navigate('/lobby')}
           className="w-full py-1.5 text-center text-xs font-bold text-[#777] hover:text-[#1A1A1A] transition-colors cursor-pointer"
         >
-          {isEditing ? 'Cancel & keep current statements' : '← Back to lobby'}
+          {isEditing ? (
+            'Cancel & keep current statements'
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" /></svg>
+              Back to lobby
+            </span>
+          )}
         </button>
       </div>
     </div>

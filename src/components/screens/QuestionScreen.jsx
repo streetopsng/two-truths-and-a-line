@@ -154,23 +154,28 @@ export const QuestionScreen = () => {
       {/* Stat row */}
       <div className="grid grid-cols-4 gap-2 shrink-0">
         <div className="bg-white border-[1.5px] border-[#E0DBD4] rounded-[10px] p-2 text-center shadow-[0_2px_0_#E0DBD4]">
-          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">🏆 Score</div>
+          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">Score</div>
           <div className="text-[18px] font-black text-[#1A1A1A] leading-none">{Math.round(me?.score || 0)}</div>
         </div>
         <div className="bg-white border-[1.5px] border-[#E0DBD4] rounded-[10px] p-2 text-center shadow-[0_2px_0_#E0DBD4]">
-          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">⏱ Time</div>
+          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">Time</div>
           <div className={`text-[18px] font-black leading-none ${isDangerTime ? 'text-[#E8334A]' : 'text-[#1A1A1A]'}`}>
             {timeLeft}s
           </div>
         </div>
         <div className="bg-white border-[1.5px] border-[#E0DBD4] rounded-[10px] p-2 text-center shadow-[0_2px_0_#E0DBD4]">
-          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">{isHost ? 'Role' : '🔥 Streak'}</div>
+          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">{isHost ? 'Role' : 'Streak'}</div>
           <div className={`text-[18px] font-black leading-none ${isHost ? 'text-[#F5821F] text-[13px]' : 'text-[#E8710A]'}`}>
-            {isHost ? '👁 Host' : (me?.streak || 0)}
+            {isHost ? (
+              <span className="inline-flex items-center gap-1">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                Host
+              </span>
+            ) : (me?.streak || 0)}
           </div>
         </div>
         <div className="bg-white border-[1.5px] border-[#E0DBD4] rounded-[10px] p-2 text-center shadow-[0_2px_0_#E0DBD4]">
-          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">📍 Round</div>
+          <div className="text-[9px] font-bold tracking-[1px] uppercase text-[#999] mb-1">Round</div>
           <div className="text-[18px] font-black text-[#1A1A1A] leading-none">{currentRound + 1}/{roundOrder?.length || 1}</div>
         </div>
       </div>
@@ -184,7 +189,7 @@ export const QuestionScreen = () => {
       </div>
 
       {/* Subject card */}
-      <div className="card p-3.5 mt-3 bg-white border-[1.5px] border-[#E0DBD4] rounded-[16px] shadow-[0_3px_0_#E0DBD4] flex items-center gap-3 shrink-0">
+      <div className="card p-3.5 mt-3 bg-white border-[1.5px] border-[#E0DBD4] rounded-[16px] shadow-[0_2px_0_#E0DBD4] flex items-center gap-3 shrink-0">
         <PlayerAvatar name={subject.name} color={subject.color} avatarId={subject.avatarId} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="text-[16px] font-black text-[#1A1A1A] truncate">
@@ -204,8 +209,8 @@ export const QuestionScreen = () => {
 
       {/* Statements or Subject Wait */}
       {!hasValidStatements ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 my-3 bg-white border border-[#E0DBD4] rounded-[16px] shadow-[0_2px_0_#E0DBD4]">
-          <div className="text-[44px] leading-none">📝</div>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 my-3 bg-white border border-[#E0DBD4] rounded-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="text-[#999]"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></svg>
           <div className="text-[18px] font-black text-[#1A1A1A]">Statement not added</div>
           <div className="text-[13px] text-[#666] max-w-[280px] leading-relaxed">
             {isMe 
@@ -215,7 +220,7 @@ export const QuestionScreen = () => {
         </div>
       ) : isMe && !revealed ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 my-2">
-          <div className="text-[52px] animate-pulseCustom leading-none">👀</div>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="text-[#F5821F] animate-pulseCustom"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" /><circle cx="12" cy="12" r="3" /></svg>
           <div className="text-[22px] font-black text-[#1A1A1A]">It's your round!</div>
           <div className="text-[13px] text-[#555] leading-[1.6] max-w-[260px]">
             Your teammates are deciding which of your statements is the lie...
@@ -232,13 +237,13 @@ export const QuestionScreen = () => {
             const statementVoters = votersByStatement[i];
             const numVotes = Object.values(votes || {}).filter(v => v === i).length;
 
-            let cardStyle = 'bg-white border-[#E0DBD4] shadow-[0_3px_0_#E0DBD4] hover:border-[#F5821F] hover:shadow-[0_3px_0_#E8710A]';
+            let cardStyle = 'bg-white border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4] hover:border-[#F5821F] hover:shadow-[0_2px_0_#E8710A]';
             if (revealed) {
               cardStyle = isLie
-                ? 'bg-[#FFF0EE] !border-[#E8334A] !shadow-[0_3px_0_#c0271d]'
-                : 'bg-[#F0FFF5] !border-[#22A855] !shadow-[0_3px_0_#1a8040]';
+                ? 'bg-[#FFF0EE] !border-[#E8334A] !shadow-[0_2px_0_#c0271d]'
+                : 'bg-[#F0FFF5] !border-[#22A855] !shadow-[0_2px_0_#1a8040]';
             } else if (amISelected) {
-              cardStyle = 'bg-[#FDF0E4] border-[#F5821F] shadow-[0_3px_0_#E8710A]';
+              cardStyle = 'bg-[#FDF0E4] border-[#F5821F] shadow-[0_2px_0_#E8710A]';
             }
 
             return (
@@ -300,14 +305,24 @@ export const QuestionScreen = () => {
 
       {/* Host-only spectator panel: live scoreboard + who still has to vote */}
       {isHost ? (
-        <div className="mt-2 mb-2 w-full rounded-[16px] border-[1.5px] border-[#E0DBD4] bg-white p-4 shadow-[0_3px_0_#E0DBD4] shrink-0">
+        <div className="mt-2 mb-2 w-full rounded-[16px] border-[1.5px] border-[#E0DBD4] bg-white p-4 shadow-[0_2px_0_#E0DBD4] shrink-0">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-2.5">
             <div className="text-[10px] tracking-[2px] uppercase text-[#999] font-black">
               Live scores
             </div>
             {!revealed && (waitingOn.length > 0
-              ? <div className="text-[11px] text-[#E8710A] font-bold tracking-wide truncate max-w-[65%]">⏳ Waiting on: {waitingOn.join(', ')}</div>
-              : <div className="text-[11px] text-[#22A855] font-bold tracking-wide">✓ All votes in — revealing…</div>
+              ? (
+                <div className="flex items-center gap-1 text-[11px] text-[#E8710A] font-bold tracking-wide max-w-[65%]">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="shrink-0"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+                  <span className="truncate">Waiting on: {waitingOn.join(', ')}</span>
+                </div>
+              )
+              : (
+                <div className="flex items-center gap-1 text-[11px] text-[#22A855] font-bold tracking-wide">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path d="M20 6 9 17l-5-5" /></svg>
+                  All votes in — revealing…
+                </div>
+              )
             )}
           </div>
           <div className="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto">
@@ -324,7 +339,12 @@ export const QuestionScreen = () => {
                     {p.uid === subjectUid
                       ? <span className="text-[#999]">hot seat</span>
                       : hasVoted
-                        ? <span className="text-[#22A855]">✓ voted</span>
+                        ? (
+                          <span className="inline-flex items-center gap-1 text-[#22A855]">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path d="M20 6 9 17l-5-5" /></svg>
+                            voted
+                          </span>
+                        )
                         : <span className="text-[#E8710A]">voting…</span>}
                   </div>
                   <div className="text-[15px] font-black text-[#F5821F] w-10 text-right">
@@ -337,7 +357,20 @@ export const QuestionScreen = () => {
         </div>
       ) : (
         <div className="text-[11px] text-[#999] text-center font-bold uppercase tracking-wider shrink-0 pb-1">
-          {!hasValidStatements ? 'No statements submitted for this player' : revealed ? 'Revealing results...' : (isMe ? 'Host managing round' : (myVote !== undefined ? '✓ Vote submitted' : 'Pick the statement you think is the lie'))}
+          {!hasValidStatements
+            ? 'No statements submitted for this player'
+            : revealed
+              ? 'Revealing results...'
+              : isMe
+                ? 'Host managing round'
+                : myVote !== undefined
+                  ? (
+                    <span className="inline-flex items-center gap-1">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><path d="M20 6 9 17l-5-5" /></svg>
+                      Vote submitted
+                    </span>
+                  )
+                  : 'Pick the statement you think is the lie'}
         </div>
       )}
     </div>
