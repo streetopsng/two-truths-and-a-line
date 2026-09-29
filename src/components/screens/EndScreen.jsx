@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
-import { closeGummyGumSession, returnToGummyGum } from '../../lib/gummygumSession';
+import { EndSessionButton } from '../ui/EndSessionButton';
 
 const REACTION_ICONS = [
   { id: 'fire', path: <path d="M12 2c-1.2 3-3.2 4.3-3.2 7.3a3.2 3.2 0 0 0 6.4 0c0-1-.3-1.8-.7-2.5 1.6 1.2 2.5 3 2.5 5.2a5 5 0 1 1-10 0c0-4.3 3.2-6.6 5-10Z" fill="currentColor" stroke="none" /> },
@@ -12,7 +12,7 @@ const REACTION_ICONS = [
 ];
 
 export const EndScreen = () => {
-  const { gameState, leaveGame, ggSession } = useGame();
+  const { gameState, ggSession } = useGame();
   const { players } = gameState;
   const [confetti, setConfetti] = useState([]);
   const [activeRxn, setActiveRxn] = useState(null);
@@ -39,15 +39,11 @@ export const EndScreen = () => {
     setTimeout(() => setActiveRxn(null), 300);
   };
 
-  const handleLeave = () => {
-    if (ggSession?.isHost) {
-      closeGummyGumSession();
-    } else {
-      try {
-        window.close();
-      } catch {
-        // ignore
-      }
+  const handleClose = () => {
+    try {
+      window.close();
+    } catch {
+      // ignore
     }
   };
 
@@ -55,17 +51,16 @@ export const EndScreen = () => {
     <div className="flex flex-col h-full max-w-[430px] md:max-w-[500px] w-full mx-auto relative z-10 p-4 sm:p-6 justify-between animate-fadeUp overflow-hidden">
       {/* Top bar with leave button */}
       <div className="flex items-center justify-between pt-1 shrink-0 relative z-20">
-        <button 
-          onClick={handleLeave}
-          className="text-[12px] font-extrabold uppercase tracking-wider text-[#555] hover:text-[#1A1A1A] cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]"
-        >
-          {ggSession?.isHost ? (
-            <span className="inline-flex items-center gap-1.5">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" /></svg>
-              End session
-            </span>
-          ) : 'Close tab'}
-        </button>
+        {ggSession?.isHost ? (
+          <EndSessionButton />
+        ) : (
+          <button
+            onClick={handleClose}
+            className="text-[12px] font-extrabold uppercase tracking-wider text-[#555] hover:text-[#1A1A1A] cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-[#E0DBD4] shadow-[0_2px_0_#E0DBD4]"
+          >
+            Close tab
+          </button>
+        )}
         <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#E8710A]">
           Game Over
         </div>
@@ -170,12 +165,7 @@ export const EndScreen = () => {
       {ggSession && (
         <div className="pt-2 flex flex-col sm:flex-row gap-3 items-center justify-center z-10">
           {ggSession.isHost ? (
-            <button
-              onClick={() => closeGummyGumSession()}
-              className="px-6 py-3 rounded-full bg-[#F5821F] hover:bg-[#E8710A] text-white font-extrabold text-[14px] transition-all cursor-pointer shadow-[0_3px_0_#c06412]"
-            >
-              Close Session & Return to GummyGum
-            </button>
+            <EndSessionButton variant="primary" />
           ) : (
             <div className="text-center px-5 py-3 bg-white/90 border border-[#E0DBD4] rounded-2xl shadow-xs">
               <div className="text-xs font-black text-[#1A1A1A]">Session completed!</div>

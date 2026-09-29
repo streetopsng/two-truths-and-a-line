@@ -18,6 +18,8 @@ import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import {
   resolveGummyGumLaunch,
   reportGummyGumResult,
+  reportGummyGumCancel,
+  closeGummyGumSession,
   returnToGummyGum,
   getGummyGumSession,
 } from "../lib/gummygumSession";
@@ -53,6 +55,23 @@ const MOCK_MODE =
 const ABANDON_THRESHOLD_MS = 3 * 60 * 60 * 1000;
 const HEARTBEAT_INTERVAL_MS = 60 * 1000;
 const IN_GAME_STATUSES = ["question", "reaction", "leaderboard"];
+// 'ended' = host ended from inside the experience; 'Ended' = GummyGum dashboard force-end.
+const ENDED_STATUSES = ["ended", "Ended", "cancelled"];
+const LOBBY_EXPIRY_MS = 20 * 60 * 1000;
+
+const isClosedRoom = (data, now = Date.now()) => {
+  if (data.status === "expired" || data.status === "end" || ENDED_STATUSES.includes(data.status)) return true;
+  if (data.status === "lobby") return Boolean(data.createdAt) && now - data.createdAt >= LOBBY_EXPIRY_MS;
+  const lastActivity = data.lastActivity || data.roundEndTime || data.createdAt;
+  return IN_GAME_STATUSES.includes(data.status) && Boolean(lastActivity) && now - lastActivity >= ABANDON_THRESHOLD_MS;
+};
+
+// The hub reuses a PIN for re-runs, so the room under it may belong to an earlier hosted session.
+const isFromEarlierRoom = (data, hostedSessionId) => {
+  if (!data || !hostedSessionId) return false;
+  if (data.hostedSessionId) return data.hostedSessionId !== hostedSessionId;
+  return isClosedRoom(data);
+};
 
   const getInitialGameCode = () => {
     if (typeof window === "undefined") return "";
@@ -77,6 +96,7 @@ export const GameProvider = ({ children }) => {
   const [ggSession, setGgSession] = useState(null);
   const [ggChecked, setGgChecked] = useState(false);
   const ggReportedRef = useRef(false);
+  const hostExitInProgressRef = useRef(false);
 
   // 0. Resolve GummyGum hub launch identity (?ggt=...), if present.
   useEffect(() => {
@@ -94,6 +114,9 @@ export const GameProvider = ({ children }) => {
         setGameCode(session.roomCode);
         localStorage.setItem("gameCode", session.roomCode);
         setIsSessionExpired(false);
+      } else if (session?.roomCode && localStorage.getItem("gameCode") === session.roomCode) {
+        // Participant refresh after a completed join (a fresh ggt launch clears this key first).
+        setGameCode(session.roomCode);
       }
     });
   }, []);
@@ -162,19 +185,26 @@ export const GameProvider = ({ children }) => {
     const unsub = onSnapshot(
       doc(db, "games", gameCode),
       (docSnap) => {
+        // Firestore fires this optimistically for the host's own 'ended' write; don't reroute mid-exit.
+        if (hostExitInProgressRef.current) return;
         if (docSnap.exists()) {
           gameDocSeenRef.current = true;
           const data = docSnap.data();
+          const ownHostedSessionId = ggSession?.hostedSessionId;
+          if (!ggSession?.isHost && ownHostedSessionId && data.hostedSessionId && data.hostedSessionId !== ownHostedSessionId) {
+            // The host reset this PIN for a newer hosted session, so this participant's session is over.
+            setGameState({ status: 'gg-cancelled' });
+            return;
+          }
           if (data.status === 'expired') {
             setIsSessionExpired(true);
           }
           if (data.status === 'lobby' && data.createdAt && Date.now() - data.createdAt >= 20 * 60 * 1000) {
             setIsSessionExpired(true);
           }
-          // 'Ended' = GummyGum dashboard force-end; the host drives their own
-          // exit through the UI instead, so only reroute other participants.
-          if (data.status === 'Ended' && !ggSession?.isHost) {
-            setGameState({ status: 'gg-cancelled' });
+          // The host drives their own exit through the UI, so only reroute participants.
+          if (ENDED_STATUSES.includes(data.status) && !ggSession?.isHost) {
+            setGameState({ status: 'gg-cancelled', completed: Boolean(data.completed) });
             return;
           }
           setGameState({ id: docSnap.id, ...data });
@@ -193,6 +223,43 @@ export const GameProvider = ({ children }) => {
 
     return unsub;
   }, [currentUser, gameCode, ggSession]);
+
+  // Participants still on the avatar step (or reconnecting) have no gameCode
+  // yet, so watch the pre-created room directly to catch a host ending it.
+  const preJoinRoomCode =
+    ggSession && !ggSession.isHost && !gameCode ? ggSession.roomCode : null;
+  const preJoinHostedSessionId = preJoinRoomCode ? ggSession.hostedSessionId || null : null;
+  const [preJoinRoomReady, setPreJoinRoomReady] = useState(false);
+  // Until the host (re)creates this hosted session's room, the PIN may be missing or hold an earlier session's room.
+  const awaitingHost = Boolean(preJoinHostedSessionId) && !preJoinRoomReady;
+  useEffect(() => {
+    if (MOCK_MODE || !currentUser || !preJoinRoomCode) return;
+
+    let seen = false;
+    const unsub = onSnapshot(
+      doc(db, "games", preJoinRoomCode),
+      (docSnap) => {
+        const data = docSnap.exists() ? docSnap.data() : null;
+        if (preJoinHostedSessionId && (!data || isFromEarlierRoom(data, preJoinHostedSessionId))) {
+          if (!seen) {
+            setPreJoinRoomReady(false);
+            return;
+          }
+        }
+        if (data) {
+          seen = true;
+          setPreJoinRoomReady(true);
+          if (ENDED_STATUSES.includes(data.status)) {
+            setGameState({ status: 'gg-cancelled', completed: Boolean(data.completed) });
+          }
+        } else if (seen) {
+          setGameState({ status: 'gg-cancelled' });
+        }
+      },
+      (error) => console.error("Pre-join room listen error:", error),
+    );
+    return unsub;
+  }, [currentUser, preJoinRoomCode, preJoinHostedSessionId]);
 
   const latestStatusRef = useRef(null);
   latestStatusRef.current = gameState.status;
@@ -222,6 +289,7 @@ export const GameProvider = ({ children }) => {
         }
 
         const beat = () => {
+          if (hostExitInProgressRef.current) return;
           if (IN_GAME_STATUSES.includes(latestStatusRef.current)) {
             updateDoc(gameRef, { lastActivity: Date.now() }).catch(() => {});
           }
@@ -458,21 +526,31 @@ export const GameProvider = ({ children }) => {
       const existingSnap = await getDoc(doc(db, "games", presetCode));
       if (existingSnap.exists()) {
         const existingData = existingSnap.data();
-        // An abandoned mid-game room is terminal: surface the expired modal
-        // rather than silently recreating a fresh lobby over it.
-        if (existingData.status === 'expired' && existingData.abandoned) {
-          localStorage.setItem("gameCode", presetCode);
-          setGameCode(presetCode);
-          return;
-        }
-        const isStale =
-          existingData.status === 'expired' ||
-          existingData.status === 'Ended' ||
-          (existingData.status === 'lobby' && existingData.createdAt && Date.now() - existingData.createdAt >= 20 * 60 * 1000);
-        if (!isStale) {
-          localStorage.setItem("gameCode", presetCode);
-          setGameCode(presetCode);
-          return;
+        const hostedSessionId = ggSession?.hostedSessionId || null;
+        if (!isFromEarlierRoom(existingData, hostedSessionId)) {
+          const sameHostedSession = Boolean(hostedSessionId) && existingData.hostedSessionId === hostedSessionId;
+          // An abandoned mid-game room, or one this hosted session already ended, is terminal:
+          // surface it rather than silently recreating a fresh lobby over it.
+          if (
+            (existingData.status === 'expired' && existingData.abandoned) ||
+            (sameHostedSession && (existingData.status === 'expired' || ENDED_STATUSES.includes(existingData.status)))
+          ) {
+            localStorage.setItem("gameCode", presetCode);
+            setGameCode(presetCode);
+            return;
+          }
+          const isStale =
+            existingData.status === 'expired' ||
+            ENDED_STATUSES.includes(existingData.status) ||
+            (existingData.status === 'lobby' && existingData.createdAt && Date.now() - existingData.createdAt >= LOBBY_EXPIRY_MS);
+          if (!isStale) {
+            if (hostedSessionId && !existingData.hostedSessionId) {
+              await updateDoc(doc(db, "games", presetCode), { hostedSessionId }).catch(() => {});
+            }
+            localStorage.setItem("gameCode", presetCode);
+            setGameCode(presetCode);
+            return;
+          }
         }
       }
     }
@@ -487,6 +565,7 @@ export const GameProvider = ({ children }) => {
       hostUid: user.uid,
       hostName: playerName || "Host",
       invitedCount: targetInvited ? parseInt(targetInvited, 10) : null,
+      hostedSessionId: ggSession?.hostedSessionId || null,
       players: {},
       currentRound: 0,
       roundOrder: [],
@@ -520,6 +599,8 @@ export const GameProvider = ({ children }) => {
     if (!snap.exists()) throw new Error("Game not found");
 
     const data = snap.data();
+    if (isFromEarlierRoom(data, ggSession?.hostedSessionId)) throw new Error("The host hasn't started this session yet");
+    if (ENDED_STATUSES.includes(data.status)) throw new Error("This session has ended");
     if (data.hostUid === user.uid) {
       localStorage.setItem("gameCode", code);
       setGameCode(code);
@@ -597,7 +678,13 @@ export const GameProvider = ({ children }) => {
     setGameState({ status: "home" });
   };
 
+  const isRoomClosed = () =>
+    hostExitInProgressRef.current ||
+    gameState.status === 'gg-cancelled' ||
+    ENDED_STATUSES.includes(gameState.status);
+
   const startGame = async () => {
+    if (isRoomClosed()) return;
     if (!currentUser || !gameCode) {
       const why = !currentUser ? "not signed in yet" : "no active game code";
       console.error("startGame blocked:", why);
@@ -677,6 +764,7 @@ export const GameProvider = ({ children }) => {
       return;
     }
     if (currentUser.uid === gameState.hostUid) return;
+    if (isRoomClosed()) return;
 
     let sets = [];
     if (Array.isArray(setsOrStatements)) {
@@ -709,7 +797,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const advanceGame = async (status, extraData = {}) => {
-    if (!currentUser || !gameCode) return;
+    if (!currentUser || !gameCode || isRoomClosed()) return;
 
     const updates = { status, ...extraData };
 
@@ -731,7 +819,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const updateGameDoc = async (data) => {
-    if (!currentUser || !gameCode) return;
+    if (!currentUser || !gameCode || isRoomClosed()) return;
 
     if (MOCK_MODE) {
       applyMockUpdates(data);
@@ -754,6 +842,37 @@ export const GameProvider = ({ children }) => {
     }
   };
 
+  // Host-only exit: notify participants via the room doc, then close the hub session, then leave.
+  const endSession = async () => {
+    if (hostExitInProgressRef.current) return;
+    hostExitInProgressRef.current = true;
+    const completed = gameState.status === "end";
+
+    if (!MOCK_MODE && gameCode) {
+      try {
+        await Promise.race([
+          updateDoc(doc(db, "games", gameCode), {
+            status: "ended",
+            endedAt: Date.now(),
+            completed,
+          }),
+          new Promise((resolve) => setTimeout(resolve, 5000)),
+        ]);
+      } catch (err) {
+        console.error("Marking room ended failed:", err);
+      }
+    }
+
+    if (completed) {
+      await closeGummyGumSession();
+    } else {
+      await reportGummyGumCancel();
+    }
+
+    localStorage.removeItem("gameCode");
+    returnToGummyGum();
+  };
+
   return (
     <GameContext.Provider
       value={{
@@ -763,6 +882,7 @@ export const GameProvider = ({ children }) => {
         authError,
         ggSession,
         ggChecked,
+        awaitingHost,
         isSessionExpired,
         setIsSessionExpired,
         setGameCode,
@@ -773,6 +893,7 @@ export const GameProvider = ({ children }) => {
         submitStatements,
         advanceGame,
         updateGameDoc,
+        endSession,
       }}
     >
       {children}

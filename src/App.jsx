@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { GameProvider, useGame } from './context/GameContext';
+import { joinedRoomKey } from './lib/gummygumSession';
 import { Button } from './components/ui/Button';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { LobbyScreen } from './components/screens/LobbyScreen';
@@ -13,6 +14,7 @@ import { EndScreen } from './components/screens/EndScreen';
 import { GgAvatarSetupScreen } from './components/screens/GgAvatarSetupScreen';
 
 import { DesktopSidebar } from './components/layout/DesktopSidebar';
+import { EndSessionButton } from './components/ui/EndSessionButton';
 
 const ICON_POSITIONS = [
   [20, 40], [180, 20], [320, 80], [60, 200], [260, 160], [140, 320], [340, 260],
@@ -135,11 +137,9 @@ const GummyGumLockedScreen = () => {
   );
 };
 
-// Participant-side landing when GummyGum cancels/ends the session out from
-// under them (the room doc disappears while they're not the host). Mirrors
-// the close-tab-then-fallback-message pattern used on the leaderboard exit
-// flow — attempt to close the tab, and only show a message if that failed.
-const GummyGumCancelledScreen = () => {
+// Participant-side landing when the host or GummyGum ends the session (room
+// marked ended or deleted). Tries to close the tab first; message is the fallback.
+const GummyGumCancelledScreen = ({ completed }) => {
   const [showMessage, setShowMessage] = useState(false);
 
   useEffect(() => {
@@ -159,9 +159,11 @@ const GummyGumCancelledScreen = () => {
         <div className="w-14 h-14 mx-auto rounded-2xl bg-[#FDE8D0] border border-[#F5821F]/30 text-[#F5821F] flex items-center justify-center">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="m20 6-11 11-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </div>
-        <h1 className="text-xl font-black">Session ended</h1>
+        <h1 className="text-xl font-black">{completed ? 'Session complete' : 'Session ended'}</h1>
         <p className="text-[#555] text-sm leading-relaxed">
-          This session was cancelled or ended. You can close this tab now.
+          {completed
+            ? 'Thanks for playing! The host has closed this session. You can close this tab now.'
+            : 'The host ended this session. You can close this tab now.'}
         </p>
       </div>
     </div>
@@ -169,7 +171,7 @@ const GummyGumCancelledScreen = () => {
 };
 
 const GameCoordinator = () => {
-  const { gameState, ggSession, ggChecked, createGame, isSessionExpired, setIsSessionExpired, setGameCode } = useGame();
+  const { gameState, ggSession, ggChecked, awaitingHost, createGame, isSessionExpired, setIsSessionExpired, setGameCode } = useGame();
   const routedRef = React.useRef(false);
 
   // Hosts spectate and never get a `players` entry, so they skip straight
@@ -193,7 +195,7 @@ const GameCoordinator = () => {
   // from the hub). The host's own branch never reaches this state — it's
   // redirected straight back to GummyGum by the listener that sets this.
   if (gameState.status === 'gg-cancelled') {
-    return <GummyGumCancelledScreen />;
+    return <GummyGumCancelledScreen completed={gameState.completed} />;
   }
 
   if (!ggSession) {
@@ -204,10 +206,13 @@ const GameCoordinator = () => {
     // Non-host: pick an avatar before joining the pre-created room.
     // If the participant already joined this room before reloading, wait for room doc sync instead of prompting for avatar setup again.
     if (!ggSession.isHost) {
+      if (awaitingHost) {
+        return <LoadingScreen message="Waiting for the host to start…" />;
+      }
       const email = (ggSession.player?.email || '').toLowerCase().trim();
       const alreadyJoined = typeof window !== 'undefined' && (
         localStorage.getItem('gameCode') === ggSession.roomCode ||
-        (email && localStorage.getItem(`twotruths_joined_${ggSession.roomCode}_${email}`) === 'true')
+        (email && localStorage.getItem(joinedRoomKey(ggSession, email)) === 'true')
       );
       if (alreadyJoined) {
         return <LoadingScreen message="Reconnecting to your room…" />;
@@ -229,8 +234,13 @@ const GameCoordinator = () => {
   );
 };
 
+// Lobby and final screens carry their own mobile End session control.
+const HOST_BAR_ROUTES = ['/round', '/round/reaction', '/round/scores'];
+
 const GameShell = () => {
   const location = useLocation();
+  const { ggSession } = useGame();
+  const showHostBar = ggSession?.isHost && HOST_BAR_ROUTES.includes(location.pathname);
 
   return (
     <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter overflow-hidden relative flex">
@@ -240,7 +250,13 @@ const GameShell = () => {
       {location.pathname !== '/' && <DesktopSidebar />}
 
       {/* Content wrapper with smooth animation — re-keyed per route */}
-      <div className="relative h-full flex-1 w-full animate-fadeUp z-10 overflow-hidden" key={location.pathname}>
+      <div className="relative h-full flex-1 w-full animate-fadeUp z-10 overflow-hidden flex flex-col" key={location.pathname}>
+        {showHostBar && (
+          <div className="md:hidden shrink-0 flex justify-end px-4 pt-3">
+            <EndSessionButton />
+          </div>
+        )}
+        <div className="relative flex-1 min-h-0">
         <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/lobby" element={<LobbyScreen />} />
@@ -252,6 +268,7 @@ const GameShell = () => {
           <Route path="/final" element={<EndScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </div>
       </div>
     </div>
   );

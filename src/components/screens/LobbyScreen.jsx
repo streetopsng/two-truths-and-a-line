@@ -5,13 +5,12 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { FloatingTips } from '../ui/FloatingTips';
-import { returnToGummyGum, reportGummyGumCancel } from '../../lib/gummygumSession';
+import { EndSessionButton } from '../ui/EndSessionButton';
 
 export const LobbyScreen = ({ onWrite }) => {
   const { gameState, currentUser, startGame, ggSession } = useGame();
   const navigate = useNavigate();
   const [error, setError] = useState('');
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const { gameCode, players, hostUid } = gameState;
   
   const queryInvited = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('invitedCount') : null;
@@ -47,18 +46,7 @@ export const LobbyScreen = ({ onWrite }) => {
     <div className="flex flex-col h-full max-w-[440px] md:max-w-[520px] mx-auto justify-between relative z-10 p-4 sm:p-6 animate-fadeUp">
       {/* Top action bar — mobile only; the same control lives in DesktopSidebar at md: */}
       <div className="flex md:hidden items-center justify-between px-1 pb-1 shrink-0">
-        {isHost ? (
-          <button
-            onClick={() => setShowCancelModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-[#E0DBD4] text-xs font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
-            title="Cancel session & return to GummyGum"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" /></svg>
-            <span>Back to GummyGum</span>
-          </button>
-        ) : (
-          <div />
-        )}
+        {isHost ? <EndSessionButton /> : <div />}
         <span className="text-[11px] font-extrabold text-[#999] uppercase tracking-wider">
           Two Truths
         </span>
@@ -280,33 +268,6 @@ export const LobbyScreen = ({ onWrite }) => {
           </div>
         )}
       </div>
-
-      {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#E0DBD4] rounded-[20px] p-6 max-w-sm w-full text-center shadow-2xl">
-            <h3 className="text-lg font-black text-[#1A1A1A] mb-2">Cancel Session?</h3>
-            <p className="text-xs text-[#666] mb-6 leading-relaxed">
-              This will close the lobby for all connected players and return you to GummyGum.
-            </p>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setShowCancelModal(false)} className="flex-1 rounded-xl">
-                Stay
-              </Button>
-              <Button
-                variant="orange"
-                onClick={async () => {
-                  setShowCancelModal(false);
-                  await reportGummyGumCancel();
-                  returnToGummyGum();
-                }}
-                className="flex-1 !bg-red-500 hover:!bg-red-600 !text-white rounded-xl"
-              >
-                Exit to Hub
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <FloatingTips />
     </div>
