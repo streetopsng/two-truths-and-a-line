@@ -58,7 +58,7 @@ export const GameRulesModal = ({ onConfirm, name }) => {
 
         {/* Tip Box */}
         <div className="p-3 bg-[#FFF9F2] border border-[#F5821F]/20 rounded-xl text-left flex items-center gap-2.5 mb-6">
-          <span className="text-base shrink-0">💡</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5821F" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true"><path d="M9 18h6" /><path d="M10 21h4" /><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3Z" /></svg>
           <span className="text-[11.5px] text-[#885215] font-medium leading-snug">
             <strong>Pro tip:</strong> The best lies are simple and realistic, while the best truths sound unbelievable!
           </span>
@@ -70,7 +70,7 @@ export const GameRulesModal = ({ onConfirm, name }) => {
           onClick={onConfirm}
           className="w-full py-3.5 text-sm font-extrabold rounded-xl shadow-[0_3px_0_#C06412] active:translate-y-0.5 cursor-pointer"
         >
-          Got it, enter lobby →
+          Got it, enter lobby
         </Button>
       </div>
     </div>

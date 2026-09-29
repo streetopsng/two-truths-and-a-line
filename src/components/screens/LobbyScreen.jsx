@@ -4,7 +4,7 @@ import { useGame } from '../../context/GameContext';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
-import { FloatingTips } from '../ui/FloatingTips';
+import { LobbyTip } from '../ui/LobbyTip';
 import { EndSessionButton } from '../ui/EndSessionButton';
 
 export const LobbyScreen = ({ onWrite }) => {
@@ -186,7 +186,7 @@ export const LobbyScreen = ({ onWrite }) => {
                   <div className="text-[13px] font-bold text-[#1A1A1A] truncate">
                     {p.name}
                   </div>
-                  {p.email && (
+                  {isHost && p.email && (
                     <div className="text-[11px] text-[#888] truncate">{p.email}</div>
                   )}
                 </div>
@@ -230,6 +230,7 @@ export const LobbyScreen = ({ onWrite }) => {
 
       {/* Action Footer */}
       <div className="flex flex-col gap-2.5 pt-2 shrink-0">
+        {!isHost && <LobbyTip />}
         {!isHost && (
           <Button
             variant={me?.submitted ? 'outline' : 'orange'}
@@ -268,8 +269,6 @@ export const LobbyScreen = ({ onWrite }) => {
           </div>
         )}
       </div>
-
-      <FloatingTips />
     </div>
   );
 };

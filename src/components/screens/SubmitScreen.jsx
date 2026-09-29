@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../../context/GameContext';
 import { Button } from '../ui/Button';
@@ -6,12 +6,35 @@ import { Button } from '../ui/Button';
 const MAX_SETS = 3;
 const emptySet = () => ({ statements: ['', '', ''], lieIndex: -1 });
 
+const draftKey = (gameCode, uid) => `twotruths_draft_${gameCode}_${uid}`;
+
+const readDraft = (key) => {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(key) || 'null');
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeDraft = (key, sets) => {
+  try {
+    if (sets) sessionStorage.setItem(key, JSON.stringify(sets));
+    else sessionStorage.removeItem(key);
+  } catch {
+    /* storage blocked */
+  }
+};
+
 export const SubmitScreen = ({ onSubmitted }) => {
   const { submitStatements, gameState, currentUser } = useGame();
   const navigate = useNavigate();
   const me = gameState?.players?.[currentUser?.uid];
+  const storageKey = draftKey(gameState?.gameCode, currentUser?.uid);
 
   const initialSets = () => {
+    const draft = readDraft(storageKey);
+    if (draft) return draft;
     if (me?.statementSets && Array.isArray(me.statementSets) && me.statementSets.length > 0) {
       return me.statementSets.map((s) => ({
         statements: Array.isArray(s.statements) ? [...s.statements] : ['', '', ''],
@@ -31,6 +54,11 @@ export const SubmitScreen = ({ onSubmitted }) => {
 
   const [sets, setSets] = useState(initialSets);
   const [error, setError] = useState('');
+
+  // Drafts survive leaving for the lobby (or a refresh) until they are saved or discarded.
+  useEffect(() => {
+    writeDraft(storageKey, sets);
+  }, [storageKey, sets]);
 
   const isEditing = Boolean(me?.submitted);
 
@@ -67,6 +95,7 @@ export const SubmitScreen = ({ onSubmitted }) => {
     }
     setError('');
     await submitStatements(sets);
+    writeDraft(storageKey, null);
     if (onSubmitted) {
       onSubmitted();
     } else {
@@ -76,7 +105,15 @@ export const SubmitScreen = ({ onSubmitted }) => {
 
   return (
     <div className="flex flex-col h-full max-w-[430px] md:max-w-[500px] w-full mx-auto relative z-10 p-4 sm:p-6 justify-between animate-fadeUp">
-      <div className="shrink-0 pt-2 pb-2">
+      <div className="shrink-0 pt-1 pb-2">
+        <button
+          type="button"
+          onClick={() => navigate('/lobby')}
+          className="inline-flex items-center gap-1.5 -ml-2 mb-2 px-2 py-1.5 rounded-lg text-[12px] font-bold text-[#555] hover:text-[#1A1A1A] hover:bg-white/70 transition-colors cursor-pointer"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          Back to lobby
+        </button>
         <div className="flex items-center justify-between">
           <div className="text-[10px] font-extrabold tracking-[2px] uppercase text-[#F5821F]">
             2 Truths & a Lie
@@ -188,20 +225,18 @@ export const SubmitScreen = ({ onSubmitted }) => {
         <Button onClick={handleSubmit} className="w-full rounded-xl">
           {isEditing ? 'Save statement changes' : 'Lock in my statements'}
         </Button>
-        <button
-          type="button"
-          onClick={() => navigate('/lobby')}
-          className="w-full py-1.5 text-center text-xs font-bold text-[#777] hover:text-[#1A1A1A] transition-colors cursor-pointer"
-        >
-          {isEditing ? (
-            'Cancel & keep current statements'
-          ) : (
-            <span className="inline-flex items-center gap-1.5">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" /></svg>
-              Back to lobby
-            </span>
-          )}
-        </button>
+        {isEditing && (
+          <button
+            type="button"
+            onClick={() => {
+              writeDraft(storageKey, null);
+              navigate('/lobby');
+            }}
+            className="w-full py-1.5 text-center text-xs font-bold text-[#777] hover:text-[#1A1A1A] transition-colors cursor-pointer"
+          >
+            Discard changes & keep saved statements
+          </button>
+        )}
       </div>
     </div>
   );

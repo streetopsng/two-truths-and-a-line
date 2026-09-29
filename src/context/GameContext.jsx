@@ -22,6 +22,7 @@ import {
   closeGummyGumSession,
   returnToGummyGum,
   getGummyGumSession,
+  watchHubSessionStatus,
 } from "../lib/gummygumSession";
 import {
   authReady as authReadyPromise,
@@ -97,6 +98,8 @@ export const GameProvider = ({ children }) => {
   const [ggChecked, setGgChecked] = useState(false);
   const ggReportedRef = useRef(false);
   const hostExitInProgressRef = useRef(false);
+  // Set when the hub ended the session; the room doc itself never changes, so snapshots must not undo it.
+  const hubEndedRef = useRef(false);
 
   // 0. Resolve GummyGum hub launch identity (?ggt=...), if present.
   useEffect(() => {
@@ -186,7 +189,7 @@ export const GameProvider = ({ children }) => {
       doc(db, "games", gameCode),
       (docSnap) => {
         // Firestore fires this optimistically for the host's own 'ended' write; don't reroute mid-exit.
-        if (hostExitInProgressRef.current) return;
+        if (hostExitInProgressRef.current || hubEndedRef.current) return;
         if (docSnap.exists()) {
           gameDocSeenRef.current = true;
           const data = docSnap.data();
@@ -239,6 +242,7 @@ export const GameProvider = ({ children }) => {
     const unsub = onSnapshot(
       doc(db, "games", preJoinRoomCode),
       (docSnap) => {
+        if (hubEndedRef.current) return;
         const data = docSnap.exists() ? docSnap.data() : null;
         if (preJoinHostedSessionId && (!data || isFromEarlierRoom(data, preJoinHostedSessionId))) {
           if (!seen) {
@@ -260,6 +264,32 @@ export const GameProvider = ({ children }) => {
     );
     return unsub;
   }, [currentUser, preJoinRoomCode, preJoinHostedSessionId]);
+
+  // 'checking' until we know whether this invite email already holds a slot in the room.
+  const [ggRejoin, setGgRejoin] = useState('checking');
+  useEffect(() => {
+    if (MOCK_MODE || !currentUser || !ggSession || ggSession.isHost || !ggSession.roomCode || gameCode || awaitingHost) return;
+    let cancelled = false;
+    const email = (ggSession.player?.email || '').toLowerCase().trim();
+    getDoc(doc(db, "games", ggSession.roomCode))
+      .then(async (snap) => {
+        const players = snap.exists() ? snap.data().players || {} : {};
+        const existing = players[currentUser.uid]
+          || (email ? Object.values(players).find((p) => (p.email || '').toLowerCase().trim() === email) : null);
+        if (cancelled) return;
+        if (!existing) {
+          setGgRejoin('none');
+          return;
+        }
+        await joinGame(ggSession.roomCode, existing.name, existing.avatarId || null);
+        if (!cancelled) setGgRejoin('joined');
+      })
+      .catch((err) => {
+        console.error('GummyGum rejoin check failed:', err);
+        if (!cancelled) setGgRejoin('none');
+      });
+    return () => { cancelled = true; };
+  }, [currentUser, ggSession, gameCode, awaitingHost]);
 
   const latestStatusRef = useRef(null);
   latestStatusRef.current = gameState.status;
@@ -304,6 +334,35 @@ export const GameProvider = ({ children }) => {
       if (heartbeat) clearInterval(heartbeat);
     };
   }, [currentUser, gameCode]);
+
+  // The host may end the session from the hub, which never touches this room.
+  const hubPin = ggSession?.roomCode || gameCode;
+  useEffect(() => {
+    if (!ggSession || !hubPin || !ggSession.hostedSessionId) return;
+    return watchHubSessionStatus({
+      pin: hubPin,
+      hostedSessionId: ggSession.hostedSessionId,
+      onEnded: async (hubSession) => {
+        if (hostExitInProgressRef.current || hubEndedRef.current) return;
+        hubEndedRef.current = true;
+        const completed = latestStatusRef.current === "end";
+        if (!ggSession.isHost) {
+          setGameState({ status: "gg-cancelled", completed });
+          return;
+        }
+        hostExitInProgressRef.current = true;
+        // A newer re-run owns the PIN's room now, so only mark it ended if it is still ours.
+        if (!MOCK_MODE && String(hubSession.id) === String(ggSession.hostedSessionId)) {
+          await Promise.race([
+            updateDoc(doc(db, "games", hubPin), { status: "ended", endedAt: Date.now(), completed }).catch(() => {}),
+            new Promise((resolve) => setTimeout(resolve, 5000)),
+          ]);
+        }
+        localStorage.removeItem("gameCode");
+        returnToGummyGum();
+      },
+    });
+  }, [ggSession, hubPin]);
 
   // Real-time interval check every 10s for 20-minute lobby expiration
   useEffect(() => {
@@ -680,6 +739,7 @@ export const GameProvider = ({ children }) => {
 
   const isRoomClosed = () =>
     hostExitInProgressRef.current ||
+    hubEndedRef.current ||
     gameState.status === 'gg-cancelled' ||
     ENDED_STATUSES.includes(gameState.status);
 
@@ -883,6 +943,7 @@ export const GameProvider = ({ children }) => {
         ggSession,
         ggChecked,
         awaitingHost,
+        ggRejoin,
         isSessionExpired,
         setIsSessionExpired,
         setGameCode,

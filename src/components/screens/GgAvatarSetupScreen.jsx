@@ -53,14 +53,25 @@ export const GgAvatarSetupScreen = () => {
     <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       <div className="relative z-10 max-w-sm md:max-w-md w-full bg-white border-[1.5px] border-[#E0DBD4] rounded-[22px] shadow-[0_4px_0_#E0DBD4] p-6 sm:p-8 text-center flex flex-col items-center animate-fadeUp">
         <div className="text-[11px] font-extrabold tracking-[2px] uppercase text-[#F5821F] mb-1.5">
-          You're in, {name}
+          You're in
         </div>
         <h2 className="text-[26px] sm:text-[30px] font-black tracking-tight text-[#1A1A1A] leading-tight mb-2">
           Pick your avatar
         </h2>
-        <p className="text-[13px] sm:text-[14px] text-[#666] font-medium mb-6">
+        <p className="text-[13px] sm:text-[14px] text-[#666] font-medium mb-5">
           This is how your teammates will see you at the table.
         </p>
+
+        {/* Name comes from the GummyGum invite, so it is shown but not editable. */}
+        <div className="w-full flex items-center gap-3 bg-[#FAF7F2] border border-[#E0DBD4] rounded-xl px-3.5 py-2.5 mb-6 text-left">
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-extrabold tracking-[1.5px] uppercase text-[#777]">Playing as</div>
+            <div className="text-[15px] font-black text-[#1A1A1A] truncate">{name}</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-label="Set by your GummyGum invite">
+            <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+        </div>
 
         <button type="button" onClick={() => setShowPicker(true)} className="mb-6 group cursor-pointer flex flex-col items-center">
           <PlayerAvatar
@@ -71,7 +82,8 @@ export const GgAvatarSetupScreen = () => {
             className="mx-auto shadow-[0_2px_8px_rgba(0,0,0,0.08)] ring-4 ring-[#FAF7F2] group-hover:scale-105 transition-all"
           />
           <div className="text-[12px] font-extrabold text-[#F5821F] mt-3 uppercase tracking-wider flex items-center gap-1.5 bg-[#FDE8D0] px-3.5 py-1.5 rounded-full border border-[#F5821F]/30 group-hover:bg-[#FCD9B3] transition-colors">
-            {avatarId ? '✏️ Change avatar' : '🎨 Choose an avatar'}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+            {avatarId ? 'Change avatar' : 'Choose an avatar'}
           </div>
         </button>
 
@@ -82,7 +94,7 @@ export const GgAvatarSetupScreen = () => {
         )}
 
         <Button variant="orange" onClick={handleStartJoin} disabled={joining} className="w-full">
-          {joining ? 'Joining…' : 'Continue to game rules →'}
+          {joining ? 'Joining…' : 'Continue to game rules'}
         </Button>
       </div>
 

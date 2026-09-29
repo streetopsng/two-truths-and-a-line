@@ -78,7 +78,7 @@ export const DesktopSidebar = () => {
                   <div className={`text-[13px] font-bold tracking-tight truncate ${isMeRow ? 'text-[#E8710A]' : 'text-[#1A1A1A]'}`}>
                     {p.name} {isMeRow && <span className="text-[#999] font-semibold text-xs ml-1">(you)</span>}
                   </div>
-                  {p.email && (
+                  {ggSession?.isHost && p.email && (
                     <div className="text-[11px] text-[#888] truncate">{p.email}</div>
                   )}
                   {status !== 'lobby' && (
