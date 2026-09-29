@@ -48,6 +48,12 @@ const MOCK_MODE =
   db.app.options.apiKey === "YOUR_API_KEY" ||
   import.meta.env.VITE_MOCK_MODE === "true";
 
+// Hours, not the lobby's 20 min: an in-game room with no connected client
+// this long is abandoned rather than just a long game.
+const ABANDON_THRESHOLD_MS = 3 * 60 * 60 * 1000;
+const HEARTBEAT_INTERVAL_MS = 60 * 1000;
+const IN_GAME_STATUSES = ["question", "reaction", "leaderboard"];
+
   const getInitialGameCode = () => {
     if (typeof window === "undefined") return "";
     const params = new URLSearchParams(window.location.search);
@@ -187,6 +193,49 @@ export const GameProvider = ({ children }) => {
 
     return unsub;
   }, [currentUser, gameCode, ggSession]);
+
+  const latestStatusRef = useRef(null);
+  latestStatusRef.current = gameState.status;
+
+  // One-time abandonment check, run before this client's heartbeat starts so
+  // a returning client can't mask a room nobody has touched for hours.
+  useEffect(() => {
+    if (MOCK_MODE || !currentUser || !gameCode) return;
+
+    const gameRef = doc(db, "games", gameCode);
+    let cancelled = false;
+    let heartbeat;
+
+    getDoc(gameRef)
+      .then((snap) => {
+        if (cancelled || !snap.exists()) return;
+        const data = snap.data();
+        const lastActivity = data.lastActivity || data.roundEndTime || data.createdAt;
+        if (
+          IN_GAME_STATUSES.includes(data.status) &&
+          lastActivity &&
+          Date.now() - lastActivity >= ABANDON_THRESHOLD_MS
+        ) {
+          updateDoc(gameRef, { status: "expired", abandoned: true }).catch(() => {});
+          setIsSessionExpired(true);
+          return;
+        }
+
+        const beat = () => {
+          if (IN_GAME_STATUSES.includes(latestStatusRef.current)) {
+            updateDoc(gameRef, { lastActivity: Date.now() }).catch(() => {});
+          }
+        };
+        beat();
+        heartbeat = setInterval(beat, HEARTBEAT_INTERVAL_MS);
+      })
+      .catch((err) => console.error("Abandonment check failed:", err));
+
+    return () => {
+      cancelled = true;
+      if (heartbeat) clearInterval(heartbeat);
+    };
+  }, [currentUser, gameCode]);
 
   // Real-time interval check every 10s for 20-minute lobby expiration
   useEffect(() => {
@@ -409,6 +458,13 @@ export const GameProvider = ({ children }) => {
       const existingSnap = await getDoc(doc(db, "games", presetCode));
       if (existingSnap.exists()) {
         const existingData = existingSnap.data();
+        // An abandoned mid-game room is terminal: surface the expired modal
+        // rather than silently recreating a fresh lobby over it.
+        if (existingData.status === 'expired' && existingData.abandoned) {
+          localStorage.setItem("gameCode", presetCode);
+          setGameCode(presetCode);
+          return;
+        }
         const isStale =
           existingData.status === 'expired' ||
           existingData.status === 'Ended' ||
