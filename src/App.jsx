@@ -222,7 +222,9 @@ const GameCoordinator = () => {
     <>
       <GameRouteSync />
       <GameShell />
-      {isSessionExpired && <SessionExpiredModal isHost={ggSession?.isHost} />}
+      {isSessionExpired && (
+        <SessionExpiredModal isHost={ggSession?.isHost} context={gameState.abandoned ? 'game' : 'lobby'} />
+      )}
     </>
   );
 };
