@@ -171,7 +171,7 @@ const GummyGumCancelledScreen = ({ completed }) => {
 };
 
 const GameCoordinator = () => {
-  const { gameState, ggSession, ggChecked, awaitingHost, createGame, isSessionExpired, setIsSessionExpired, setGameCode } = useGame();
+  const { gameState, ggSession, ggChecked, awaitingHost, ggRejoin, createGame, isSessionExpired, setIsSessionExpired, setGameCode } = useGame();
   const routedRef = React.useRef(false);
 
   // Hosts spectate and never get a `players` entry, so they skip straight
@@ -214,8 +214,8 @@ const GameCoordinator = () => {
         localStorage.getItem('gameCode') === ggSession.roomCode ||
         (email && localStorage.getItem(joinedRoomKey(ggSession, email)) === 'true')
       );
-      if (alreadyJoined) {
-        return <LoadingScreen message="Reconnecting to your room…" />;
+      if (ggRejoin !== 'none') {
+        return <LoadingScreen message={alreadyJoined ? "Reconnecting to your room…" : "Connecting to session…"} />;
       }
       return <GgAvatarSetupScreen />;
     }

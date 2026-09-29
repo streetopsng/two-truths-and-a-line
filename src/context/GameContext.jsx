@@ -265,6 +265,32 @@ export const GameProvider = ({ children }) => {
     return unsub;
   }, [currentUser, preJoinRoomCode, preJoinHostedSessionId]);
 
+  // 'checking' until we know whether this invite email already holds a slot in the room.
+  const [ggRejoin, setGgRejoin] = useState('checking');
+  useEffect(() => {
+    if (MOCK_MODE || !currentUser || !ggSession || ggSession.isHost || !ggSession.roomCode || gameCode || awaitingHost) return;
+    let cancelled = false;
+    const email = (ggSession.player?.email || '').toLowerCase().trim();
+    getDoc(doc(db, "games", ggSession.roomCode))
+      .then(async (snap) => {
+        const players = snap.exists() ? snap.data().players || {} : {};
+        const existing = players[currentUser.uid]
+          || (email ? Object.values(players).find((p) => (p.email || '').toLowerCase().trim() === email) : null);
+        if (cancelled) return;
+        if (!existing) {
+          setGgRejoin('none');
+          return;
+        }
+        await joinGame(ggSession.roomCode, existing.name, existing.avatarId || null);
+        if (!cancelled) setGgRejoin('joined');
+      })
+      .catch((err) => {
+        console.error('GummyGum rejoin check failed:', err);
+        if (!cancelled) setGgRejoin('none');
+      });
+    return () => { cancelled = true; };
+  }, [currentUser, ggSession, gameCode, awaitingHost]);
+
   const latestStatusRef = useRef(null);
   latestStatusRef.current = gameState.status;
 
@@ -917,6 +943,7 @@ export const GameProvider = ({ children }) => {
         ggSession,
         ggChecked,
         awaitingHost,
+        ggRejoin,
         isSessionExpired,
         setIsSessionExpired,
         setGameCode,

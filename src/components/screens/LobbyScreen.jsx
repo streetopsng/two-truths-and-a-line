@@ -186,7 +186,7 @@ export const LobbyScreen = ({ onWrite }) => {
                   <div className="text-[13px] font-bold text-[#1A1A1A] truncate">
                     {p.name}
                   </div>
-                  {p.email && (
+                  {isHost && p.email && (
                     <div className="text-[11px] text-[#888] truncate">{p.email}</div>
                   )}
                 </div>
