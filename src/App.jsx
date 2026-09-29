@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { GameProvider, useGame } from './context/GameContext';
+import { joinedRoomKey } from './lib/gummygumSession';
 import { Button } from './components/ui/Button';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { LobbyScreen } from './components/screens/LobbyScreen';
@@ -170,7 +171,7 @@ const GummyGumCancelledScreen = ({ completed }) => {
 };
 
 const GameCoordinator = () => {
-  const { gameState, ggSession, ggChecked, createGame, isSessionExpired, setIsSessionExpired, setGameCode } = useGame();
+  const { gameState, ggSession, ggChecked, awaitingHost, createGame, isSessionExpired, setIsSessionExpired, setGameCode } = useGame();
   const routedRef = React.useRef(false);
 
   // Hosts spectate and never get a `players` entry, so they skip straight
@@ -205,10 +206,13 @@ const GameCoordinator = () => {
     // Non-host: pick an avatar before joining the pre-created room.
     // If the participant already joined this room before reloading, wait for room doc sync instead of prompting for avatar setup again.
     if (!ggSession.isHost) {
+      if (awaitingHost) {
+        return <LoadingScreen message="Waiting for the host to start…" />;
+      }
       const email = (ggSession.player?.email || '').toLowerCase().trim();
       const alreadyJoined = typeof window !== 'undefined' && (
         localStorage.getItem('gameCode') === ggSession.roomCode ||
-        (email && localStorage.getItem(`twotruths_joined_${ggSession.roomCode}_${email}`) === 'true')
+        (email && localStorage.getItem(joinedRoomKey(ggSession, email)) === 'true')
       );
       if (alreadyJoined) {
         return <LoadingScreen message="Reconnecting to your room…" />;

@@ -53,6 +53,9 @@ export async function resolveGummyGumLaunch() {
     return null;
   }
 
+  // The URL sessionId is the hub's hosted session; verify's data.sessionId is per-launch.
+  const hostedSessionId = params.get('sessionId') || null;
+
   const hubUrl = body.data.hubUrl || (typeof document !== 'undefined' && document.referrer ? new URL(document.referrer).origin : 'https://gummygum.app');
 
   const session = {
@@ -62,6 +65,7 @@ export async function resolveGummyGumLaunch() {
     player: body.data.player,
     reportToken: body.data.reportToken,
     roomCode: body.data.roomCode || null,
+    hostedSessionId,
     isHost: Boolean(body.data.isHost),
     invitedCount: body.data.invitedCount || null,
     hubUrl,
@@ -77,6 +81,11 @@ export async function resolveGummyGumLaunch() {
   window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
 
   return session;
+}
+
+// The hub reuses a PIN across hosted sessions, so "already joined" is per hosted session.
+export function joinedRoomKey(session, email) {
+  return ['twotruths_joined', session?.roomCode, session?.hostedSessionId, email].filter(Boolean).join('_');
 }
 
 // Storage is cleared by returnToGummyGum afterwards, so the hub URL survives until navigation.

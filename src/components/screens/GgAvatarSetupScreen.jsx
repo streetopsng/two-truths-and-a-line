@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { AvatarPickerModal } from '../ui/AvatarPickerModal';
 import { GameRulesModal } from '../ui/GameRulesModal';
+import { joinedRoomKey } from '../../lib/gummygumSession';
 
 // Shown to a GummyGum-invited participant right after their name/room code
 // resolve, before they land in the lobby — mirrors HomeScreen's manual join
@@ -36,7 +37,7 @@ export const GgAvatarSetupScreen = () => {
         if (avatarId) localStorage.setItem(`twotruths_avatar_${email}`, avatarId);
         localStorage.setItem(`twotruths_name_${email}`, name);
         if (ggSession?.roomCode) {
-          localStorage.setItem(`twotruths_joined_${ggSession.roomCode}_${email}`, 'true');
+          localStorage.setItem(joinedRoomKey(ggSession, email), 'true');
         }
       }
       await joinGame(ggSession.roomCode, name, avatarId);
