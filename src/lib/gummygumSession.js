@@ -79,6 +79,7 @@ export async function resolveGummyGumLaunch() {
   return session;
 }
 
+// Storage is cleared by returnToGummyGum afterwards, so the hub URL survives until navigation.
 export async function reportGummyGumCancel() {
   const session = getGummyGumSession();
   if (!session || !session.reportToken) return;
@@ -88,12 +89,10 @@ export async function reportGummyGumCancel() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reportToken: session.reportToken }),
+      keepalive: true,
     });
   } catch (err) {
     console.error('GummyGum cancel report failed', err);
-  } finally {
-    sessionStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STORAGE_KEY);
   }
 }
 
@@ -106,6 +105,7 @@ export async function reportGummyGumResult(report) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reportToken: session.reportToken, report }),
+      keepalive: true,
     });
     session.reported = true;
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
@@ -115,33 +115,20 @@ export async function reportGummyGumResult(report) {
   }
 }
 
-// Host-only: explicitly close session, ensure final report submitted, and return to GummyGum
+// Host-only: marks the hosted session ended hub-side; caller navigates via returnToGummyGum.
 export async function closeGummyGumSession(finalReport) {
   const session = getGummyGumSession();
-  if (!session) {
-    window.location.href = 'https://gummygum.app';
-    return;
-  }
-
-  if (!session.isHost) {
-    console.warn('Only the session host can close the session.');
-    returnToGummyGum();
-    return;
-  }
+  if (!session || !session.isHost || !session.reportToken) return;
 
   try {
     await fetch(`${API_URL}/api/gummygum/launch/close`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reportToken: session.reportToken, report: finalReport }),
+      keepalive: true,
     });
   } catch (err) {
     console.error('GummyGum close session failed', err);
-  } finally {
-    const hub = session.hubUrl || 'https://gummygum.app';
-    sessionStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STORAGE_KEY);
-    window.location.href = hub;
   }
 }
 
