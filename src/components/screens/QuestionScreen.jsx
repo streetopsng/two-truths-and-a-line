@@ -46,6 +46,16 @@ export const QuestionScreen = () => {
     }
   }, [revealed]);
 
+  // Driven by the persisted reveal so a host reload in this window can't strand the round.
+  useEffect(() => {
+    if (!isHost || !revealed) return;
+    const timer = setTimeout(() => {
+      updateGameDoc({ status: 'reaction' }).catch((err) => console.error('Advance to reaction failed:', err));
+    }, 3000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, revealed]);
+
   useEffect(() => {
     const calcTime = () => {
       if (!roundEndTime) return 30;
@@ -122,13 +132,13 @@ export const QuestionScreen = () => {
     
     updates[`players.${subjectUid}.score`] = subject.score + bonus;
     updates[`players.${subjectUid}.liarPoints`] = (subject.liarPoints || 0) + bonus;
+    // A player with several statement sets would otherwise carry their last reaction into this round.
+    updates[`players.${subjectUid}.lastReaction`] = null;
+    updates.roundBonus = bonus;
+    updates.totalVoters = voters.length;
+    updates.fooled = wrongVoters;
 
     await updateGameDoc(updates);
-    
-    // Move to reaction after 3 seconds
-    setTimeout(() => {
-      updateGameDoc({ status: 'reaction', roundBonus: bonus, totalVoters: voters.length, fooled: wrongVoters });
-    }, 3000);
   };
 
   if (!subject || !activeSet) return null;

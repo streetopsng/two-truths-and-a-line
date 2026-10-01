@@ -261,7 +261,7 @@ export const LobbyScreen = ({ onWrite }) => {
             </Button>
             <div className="text-[11px] text-[#777] text-center mt-1.5 font-semibold">
               {!hasEnoughPlayers 
-                ? `Need at least ${MIN_PLAYERS} players to start` 
+                ? `Waiting for at least ${MIN_PLAYERS} participants (${playersList.length} joined)` 
                 : !allSubmitted
                   ? 'Waiting for all players to submit their statements...'
                   : "Everyone's ready — you can start the game!"}

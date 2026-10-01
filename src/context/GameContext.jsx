@@ -380,6 +380,38 @@ export const GameProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [gameState.status, gameState.createdAt]);
 
+  const buildGgReport = () => {
+    const players = gameState.players || {};
+    const ranked = Object.entries(players)
+      .map(([uid, p]) => ({ uid, ...p }))
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    const hostPlayer = players[currentUser.uid];
+    const placement = ranked.findIndex((p) => p.uid === currentUser.uid) + 1;
+    const bestLiar = [...ranked].sort(
+      (a, b) => (b.liarPoints || 0) - (a.liarPoints || 0),
+    )[0];
+    const lieDetector = [...ranked].sort(
+      (a, b) => (b.correctGuesses || 0) - (a.correctGuesses || 0),
+    )[0];
+
+    return {
+      gameCode: gameState.gameCode,
+      finalScore: hostPlayer?.score ?? 0,
+      placement: placement || null,
+      totalPlayers: ranked.length,
+      correctGuesses: hostPlayer?.correctGuesses ?? 0,
+      liarPoints: hostPlayer?.liarPoints ?? 0,
+      bestLiarName: bestLiar?.name ?? null,
+      lieDetectorName: lieDetector?.name ?? null,
+      leaderboard: ranked.map((p) => ({
+        name: p.name,
+        score: p.score ?? 0,
+        isHost: p.uid === currentUser.uid,
+      })),
+    };
+  };
+
   // 3. Report the launching host's final result back to the GummyGum hub
   useEffect(() => {
     if (ggReportedRef.current) return;
@@ -394,35 +426,7 @@ export const GameProvider = ({ children }) => {
     ggReportedRef.current = true;
 
     try {
-      const players = gameState.players || {};
-      const ranked = Object.entries(players)
-        .map(([uid, p]) => ({ uid, ...p }))
-        .sort((a, b) => (b.score || 0) - (a.score || 0));
-
-      const hostPlayer = players[currentUser.uid];
-      const placement = ranked.findIndex((p) => p.uid === currentUser.uid) + 1;
-      const bestLiar = [...ranked].sort(
-        (a, b) => (b.liarPoints || 0) - (a.liarPoints || 0),
-      )[0];
-      const lieDetector = [...ranked].sort(
-        (a, b) => (b.correctGuesses || 0) - (a.correctGuesses || 0),
-      )[0];
-
-      reportGummyGumResult({
-        gameCode: gameState.gameCode,
-        finalScore: hostPlayer?.score ?? 0,
-        placement: placement || null,
-        totalPlayers: ranked.length,
-        correctGuesses: hostPlayer?.correctGuesses ?? 0,
-        liarPoints: hostPlayer?.liarPoints ?? 0,
-        bestLiarName: bestLiar?.name ?? null,
-        lieDetectorName: lieDetector?.name ?? null,
-        leaderboard: ranked.map((p) => ({
-          name: p.name,
-          score: p.score ?? 0,
-          isHost: p.uid === currentUser.uid,
-        })),
-      });
+      reportGummyGumResult(buildGgReport());
     } catch (err) {
       console.error("GummyGum result report failed to build", err);
     }
@@ -605,6 +609,10 @@ export const GameProvider = ({ children }) => {
           if (!isStale) {
             if (hostedSessionId && !existingData.hostedSessionId) {
               await updateDoc(doc(db, "games", presetCode), { hostedSessionId }).catch(() => {});
+            }
+            // The hub-verified host relaunching from another browser has a new anonymous uid; keep them in control.
+            if (ggSession?.isHost && existingData.hostUid !== user.uid) {
+              await updateDoc(doc(db, "games", presetCode), { hostUid: user.uid }).catch(() => {});
             }
             localStorage.setItem("gameCode", presetCode);
             setGameCode(presetCode);
@@ -924,7 +932,14 @@ export const GameProvider = ({ children }) => {
     }
 
     if (completed) {
-      await closeGummyGumSession();
+      // The report sent on reaching the end may have failed; close carries it unless it already landed.
+      let finalReport;
+      try {
+        finalReport = buildGgReport();
+      } catch {
+        finalReport = undefined;
+      }
+      await closeGummyGumSession(finalReport);
     } else {
       await reportGummyGumCancel();
     }

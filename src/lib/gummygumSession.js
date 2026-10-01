@@ -115,15 +115,16 @@ export async function reportGummyGumCancel() {
 
 export async function reportGummyGumResult(report) {
   const session = getGummyGumSession();
-  if (!session || !session.reportToken) return;
+  if (!session || !session.reportToken || session.reported) return;
 
   try {
-    await fetch(`${API_URL}/api/gummygum/launch/report`, {
+    const res = await fetch(`${API_URL}/api/gummygum/launch/report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reportToken: session.reportToken, report }),
       keepalive: true,
     });
+    if (!res.ok) throw new Error(`report rejected (${res.status})`);
     session.reported = true;
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
@@ -141,7 +142,7 @@ export async function closeGummyGumSession(finalReport) {
     await fetch(`${API_URL}/api/gummygum/launch/close`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reportToken: session.reportToken, report: finalReport }),
+      body: JSON.stringify({ reportToken: session.reportToken, report: session.reported ? undefined : finalReport }),
       keepalive: true,
     });
   } catch (err) {
