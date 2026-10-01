@@ -44,7 +44,7 @@ test.describe('Host Spectator Flow', () => {
 
     // 7. Host controls the flow between rounds
     await expect(page.getByText(/That was/)).toBeVisible({ timeout: 10000 });
-    await page.getByRole('button', { name: 'Next round →' }).click();
+    await page.getByRole('button', { name: /Next round/ }).click();
     await expect(page.getByText(/Round 2 of/).first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Live scores')).toBeVisible();
   });
