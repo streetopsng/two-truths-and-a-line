@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Every client signs in anonymously at startup (src/firebase/config.js).
+    match /games/{gameCode} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
