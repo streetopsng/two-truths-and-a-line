@@ -3,8 +3,8 @@ import { useGame } from '../../context/GameContext';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
 export const QuestionScreen = () => {
-  const { gameState, currentUser, updateGameDoc } = useGame();
-  const { currentRound, roundOrder, players, roundEndTime, votes, revealed, hostUid } = gameState;
+  const { gameState, votes, votesCast, votesReady, castVote, currentUser, updateGameDoc } = useGame();
+  const { currentRound, roundOrder, players, roundEndTime, revealed, hostUid } = gameState;
   
   // Each round entry is { uid, setIndex } — one entry per statement set.
   const roundEntry = roundOrder?.[currentRound];
@@ -72,10 +72,9 @@ export const QuestionScreen = () => {
   }, [roundEndTime]);
 
   useEffect(() => {
-    if (!isHost || revealed || hasRevealedRef.current) return;
-    
+    if (!isHost || revealed || hasRevealedRef.current || !votesReady) return;
+
     const numVoters = Object.keys(players || {}).length - 1; // excluding subject
-    const votesCast = Object.keys(votes || {}).length;
     const allVoted = numVoters > 0 && votesCast >= numVoters;
 
     if (timeLeft === 0 || allVoted) {
@@ -86,18 +85,17 @@ export const QuestionScreen = () => {
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, votes, players, isHost, revealed]);
+  }, [timeLeft, votes, players, isHost, revealed, votesReady]);
 
   const handleVote = async (idx) => {
     if (revealed || isMe || isHost) return;
-    await updateGameDoc({
-      [`votes.${currentUser.uid}`]: idx
-    }).catch((err) => console.error('Vote failed:', err));
+    await castVote(idx).catch((err) => console.error('Vote failed:', err));
   };
 
   const handleReveal = async () => {
     const voters = Object.keys(players || {}).filter(uid => uid !== subjectUid);
-    const updates = { revealed: true };
+    // Publishing the votes with the reveal is what lets every device show the split and its own result.
+    const updates = { revealed: true, votes: votes || {}, votesCast: Object.keys(votes || {}).length };
     
     let wrongVoters = 0;
     
@@ -147,7 +145,6 @@ export const QuestionScreen = () => {
   if (!subject || !activeSet) return null;
 
   const myVote = votes?.[currentUser?.uid];
-  const votesCast = Object.keys(votes || {}).length;
   const isDangerTime = timeLeft <= 8;
 
   return (

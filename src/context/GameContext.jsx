@@ -3,11 +3,13 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useMemo,
   useRef,
 } from "react";
 import { db, auth } from "../firebase/config";
 import {
   doc,
+  collection,
   onSnapshot,
   setDoc,
   updateDoc,
@@ -61,6 +63,8 @@ const ENDED_STATUSES = ["ended", "Ended", "cancelled"];
 const LOBBY_EXPIRY_MS = 20 * 60 * 1000;
 const WRITE_ATTEMPTS = 5;
 const RETRY_DELAY_MS = 1000;
+const VOTE_COUNT_DEBOUNCE_MS = 300;
+const VOTE_COUNT_INTERVAL_MS = 4000;
 const phaseOf = (g) => `${g?.status}|${g?.currentRound}|${g?.revealed}`;
 
 const isClosedRoom = (data, now = Date.now()) => {
@@ -302,26 +306,104 @@ export const GameProvider = ({ children }) => {
   const latestGameRef = useRef(gameState);
   latestGameRef.current = gameState;
 
+  // Votes live in games/{code}/votes/{uid} so a vote reaches only the host and the voter, not every device.
+  const isHostClient = Boolean(currentUser && gameState.hostUid && gameState.hostUid === currentUser.uid);
+  const inGame = IN_GAME_STATUSES.includes(gameState.status);
+  const [voteDocs, setVoteDocs] = useState({});
+  const votesDeniedRef = useRef(false);
+  // A host that reloads at the end of the timer must not reveal before the votes have loaded.
+  const [votesLoadedFor, setVotesLoadedFor] = useState(null);
+  const votesReady = MOCK_MODE || votesLoadedFor === gameCode;
+  useEffect(() => {
+    if (MOCK_MODE || !currentUser || !gameCode || !inGame) return;
+    const votesCol = collection(db, "games", gameCode, "votes");
+    const onError = (err) => {
+      if (err?.code === "permission-denied") votesDeniedRef.current = true;
+      console.error("Vote listen error:", err);
+      setVotesLoadedFor(gameCode);
+    };
+    if (isHostClient) {
+      return onSnapshot(
+        votesCol,
+        (snap) => {
+          const next = {};
+          snap.forEach((d) => { next[d.id] = d.data(); });
+          setVoteDocs(next);
+          setVotesLoadedFor(gameCode);
+        },
+        onError,
+      );
+    }
+    return onSnapshot(
+      doc(votesCol, currentUser.uid),
+      (snap) => setVoteDocs(snap.exists() ? { [snap.id]: snap.data() } : {}),
+      onError,
+    );
+  }, [currentUser, gameCode, inGame, isHostClient]);
+
+  // The room doc is recreated when the hub reuses a PIN, so the key also pins the vote to this game.
+  const voteKey = `${gameState.createdAt || ""}_${gameState.currentRound}`;
+  const votes = useMemo(() => {
+    // After the reveal the host's published map is the single source, so every device shows the scored votes.
+    if (gameState.revealed && gameState.votesCast !== undefined) return gameState.votes || {};
+    // Votes written into the room doc itself come from clients still on the old build.
+    const merged = { ...(gameState.votes || {}) };
+    Object.entries(voteDocs).forEach(([uid, v]) => {
+      if (v?.key !== voteKey || typeof v.choice !== "number") return;
+      if (gameState.players && !gameState.players[uid]) return;
+      merged[uid] = v.choice;
+    });
+    return merged;
+  }, [gameState.votes, gameState.revealed, gameState.votesCast, gameState.players, voteDocs, voteKey]);
+  const ownVoteCount = Object.keys(votes).length;
+  const votesCast = isHostClient ? ownVoteCount : Math.max(gameState.votesCast || 0, ownVoteCount);
+
+  // Players only see how many have voted, so the host publishes the count in steps instead of once per vote.
+  const lastCountPublishRef = useRef(0);
+  const publishedInDoc = Math.max(gameState.votesCast || 0, Object.keys(gameState.votes || {}).length);
+  useEffect(() => {
+    if (MOCK_MODE || !isHostClient || !gameCode || gameState.status !== "question" || gameState.revealed) return;
+    if (ownVoteCount <= publishedInDoc) return;
+    const wait = Math.max(VOTE_COUNT_DEBOUNCE_MS, lastCountPublishRef.current + VOTE_COUNT_INTERVAL_MS - Date.now());
+    const timer = setTimeout(() => {
+      lastCountPublishRef.current = Date.now();
+      updateDoc(doc(db, "games", gameCode), { votesCast: ownVoteCount }).catch(() => {});
+    }, wait);
+    return () => clearTimeout(timer);
+  }, [isHostClient, gameCode, gameState.status, gameState.revealed, ownVoteCount, publishedInDoc]);
+
+  const lastHostStampRef = useRef(0);
+
   // A failed write must not freeze the round, so it is retried; once the game has moved on a late retry is dropped.
-  const writeGame = async (data) => {
-    const gameRef = doc(db, "games", gameCode);
+  const retryWrite = async (write, { denyIsFatal = true } = {}) => {
     const startPhase = phaseOf(latestGameRef.current);
     let lastError = null;
     for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
       if (attempt > 0 && phaseOf(latestGameRef.current) !== startPhase) return;
       try {
-        await updateDoc(gameRef, data);
+        await write();
         setSyncError(false);
         return;
       } catch (err) {
         lastError = err;
         console.error(`Game write failed (attempt ${attempt + 1}):`, err);
+        if (err?.code === "permission-denied" && !denyIsFatal) throw err;
         if (err?.code === "permission-denied" || err?.code === "not-found") break;
         if (attempt < WRITE_ATTEMPTS - 1) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
       }
     }
     setSyncError(true);
     throw lastError;
+  };
+
+  const writeGame = (data) => {
+    const gameRef = doc(db, "games", gameCode);
+    if (!ggSessionRef.current?.isHost) return retryWrite(() => updateDoc(gameRef, data));
+    // Host writes double as the heartbeat, so the timer below can skip while the game is moving.
+    return retryWrite(() => {
+      const now = Date.now();
+      return updateDoc(gameRef, { lastActivity: now, ...data }).then(() => { lastHostStampRef.current = now; });
+    });
   };
 
   // One-time abandonment check, run before this client's heartbeat starts so
@@ -351,6 +433,7 @@ export const GameProvider = ({ children }) => {
         // Host only: every player writing the game doc made every other device re-read it each minute.
         const beat = () => {
           if (hostExitInProgressRef.current || !ggSessionRef.current?.isHost) return;
+          if (Date.now() - lastHostStampRef.current < HEARTBEAT_INTERVAL_MS) return;
           if (IN_GAME_STATUSES.includes(latestStatusRef.current)) {
             updateDoc(gameRef, { lastActivity: Date.now() }).catch(() => {});
           }
@@ -734,6 +817,11 @@ export const GameProvider = ({ children }) => {
         moved[`votes.${user.uid}`] = data.votes[staleUid];
         moved[`votes.${staleUid}`] = deleteField();
       }
+      if (data.status !== "lobby") {
+        const votesCol = collection(db, "games", code, "votes");
+        const staleVote = await getDoc(doc(votesCol, staleUid)).catch(() => null);
+        if (staleVote?.exists()) await setDoc(doc(votesCol, user.uid), staleVote.data()).catch(() => {});
+      }
       await updateDoc(gameRef, {
         ...moved,
         [`players.${user.uid}`]: {
@@ -842,6 +930,7 @@ export const GameProvider = ({ children }) => {
       currentRound: 0,
       roundEndTime: Date.now() + 30000,
       votes: {},
+      votesCast: 0,
       revealed: false,
     };
 
@@ -936,6 +1025,26 @@ export const GameProvider = ({ children }) => {
     await writeGame(data);
   };
 
+  const castVote = async (choice) => {
+    if (!currentUser || !gameCode || isRoomClosed()) return;
+    if (MOCK_MODE) {
+      applyMockUpdates({ [`votes.${currentUser.uid}`]: choice });
+      return;
+    }
+    if (!votesDeniedRef.current) {
+      const voteRef = doc(db, "games", gameCode, "votes", currentUser.uid);
+      try {
+        await retryWrite(() => setDoc(voteRef, { key: voteKey, choice, at: Date.now() }), { denyIsFatal: false });
+        return;
+      } catch (err) {
+        if (err?.code !== "permission-denied") throw err;
+        votesDeniedRef.current = true;
+      }
+    }
+    // The votes subcollection rule isn't published yet, so fall back to the shared room doc.
+    await writeGame({ [`votes.${currentUser.uid}`]: choice });
+  };
+
   // Host-only exit: notify participants via the room doc, then close the hub session, then leave.
   const endSession = async () => {
     if (hostExitInProgressRef.current) return;
@@ -978,6 +1087,10 @@ export const GameProvider = ({ children }) => {
     <GameContext.Provider
       value={{
         gameState,
+        votes,
+        votesCast,
+        votesReady,
+        castVote,
         currentUser,
         authReady,
         authError,
