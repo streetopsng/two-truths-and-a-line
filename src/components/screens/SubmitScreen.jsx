@@ -94,7 +94,13 @@ export const SubmitScreen = ({ onSubmitted }) => {
       }
     }
     setError('');
-    await submitStatements(sets);
+    try {
+      await submitStatements(sets);
+    } catch (err) {
+      console.error('Submit failed:', err);
+      setError("Couldn't save your statements. Check your connection and try again.");
+      return;
+    }
     writeDraft(storageKey, null);
     if (onSubmitted) {
       onSubmitted();

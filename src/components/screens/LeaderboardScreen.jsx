@@ -4,8 +4,8 @@ import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { Button } from '../ui/Button';
 
 export const LeaderboardScreen = () => {
-  const { gameState, currentUser, updateGameDoc } = useGame();
-  const { currentRound, roundOrder, players, hostUid, votes, fooled, totalVoters } = gameState;
+  const { gameState, votes, currentUser, updateGameDoc } = useGame();
+  const { currentRound, roundOrder, players, hostUid, fooled, totalVoters } = gameState;
 
   // Each round entry is { uid, setIndex } — one entry per statement set.
   const roundEntry = roundOrder?.[currentRound];
@@ -23,16 +23,21 @@ export const LeaderboardScreen = () => {
   const isLast = currentRound >= (roundOrder?.length || 1) - 1;
 
   const handleNext = async () => {
-    if (isLast) {
-      await updateGameDoc({ status: 'end' });
-    } else {
-      await updateGameDoc({ 
-        status: 'question',
-        currentRound: currentRound + 1,
-        roundEndTime: Date.now() + 30000,
-        votes: {},
-        revealed: false
-      });
+    try {
+      if (isLast) {
+        await updateGameDoc({ status: 'end' });
+      } else {
+        await updateGameDoc({
+          status: 'question',
+          currentRound: currentRound + 1,
+          roundEndTime: Date.now() + 30000,
+          votes: {},
+          votesCast: 0,
+          revealed: false
+        });
+      }
+    } catch (err) {
+      console.error('Next round failed:', err);
     }
   };
 
