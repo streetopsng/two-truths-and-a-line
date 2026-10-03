@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 import { GameProvider, useGame } from './context/GameContext';
 import { joinedRoomKey } from './lib/gummygumSession';
 import { Button } from './components/ui/Button';
-import { HomeScreen } from './components/screens/HomeScreen';
 import { LobbyScreen } from './components/screens/LobbyScreen';
 import { SubmitScreen } from './components/screens/SubmitScreen';
 import { SubmitWaitScreen } from './components/screens/SubmitWaitScreen';
@@ -83,7 +82,26 @@ const GameRouteSync = () => {
 
 import { SessionExpiredModal } from './components/ui/SessionExpiredModal';
 
-const LoadingScreen = ({ message = "Connecting to session…" }) => (
+const SLOW_MESSAGE = 'Still connecting… please wait';
+const STALLED_MESSAGE = "This is taking longer than usual — check your internet connection. We'll keep trying.";
+
+// `progressive` is for waits on the network (not on the host), which escalate the message if they drag on.
+const LoadingScreen = ({ message = 'Loading…', progressive = false }) => {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    if (!progressive) return;
+    const slow = setTimeout(() => setStage(1), 8000);
+    const stalled = setTimeout(() => setStage(2), 20000);
+    return () => {
+      clearTimeout(slow);
+      clearTimeout(stalled);
+    };
+  }, [progressive]);
+
+  const text = stage === 2 ? STALLED_MESSAGE : stage === 1 ? SLOW_MESSAGE : message;
+
+  return (
   <div className="h-screen w-full bg-[#EDEAE4] text-[#1A1A1A] font-inter flex flex-col items-center justify-center p-6 relative overflow-hidden">
     <BackgroundTexture />
     <div className="card max-w-xs w-full p-8 text-center space-y-4 bg-white border-[1.5px] border-[#E0DBD4] rounded-[24px] shadow-[0_2px_0_#E0DBD4] relative z-10 flex flex-col items-center animate-fadeUp">
@@ -91,7 +109,7 @@ const LoadingScreen = ({ message = "Connecting to session…" }) => (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="animate-spin"><circle cx="12" cy="12" r="9" opacity="0.25" /><path d="M21 12a9 9 0 0 0-9-9" /></svg>
       </div>
       <div>
-        <h3 className="text-[15px] font-black text-[#1A1A1A]">{message}</h3>
+        <h3 className="text-[15px] font-black text-[#1A1A1A]">{text}</h3>
         <p className="text-[12px] text-[#777] mt-1 font-medium">Getting everything ready for you…</p>
       </div>
       <div className="w-full bg-[#EDEAE4] h-1.5 rounded-full overflow-hidden mt-1">
@@ -99,7 +117,8 @@ const LoadingScreen = ({ message = "Connecting to session…" }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const GummyGumLockedScreen = () => {
   const isParticipant = typeof window !== 'undefined' && (
@@ -188,7 +207,7 @@ const GameCoordinator = () => {
   }, [ggSession, createGame, setIsSessionExpired, setGameCode]);
 
   if (!ggChecked) {
-    return <LoadingScreen message="Connecting to session…" />;
+    return <LoadingScreen key="connecting" progressive />;
   }
 
   // GummyGum-launched participant whose room just disappeared (host cancelled
@@ -202,9 +221,13 @@ const GameCoordinator = () => {
     return <GummyGumLockedScreen />;
   }
 
-  if (ggSession?.roomCode && gameState.status === 'home') {
+  // Two Truths only runs from a GummyGum launch, so there is no home screen to land on.
+  if (gameState.status === 'home') {
     // Non-host: pick an avatar before joining the pre-created room.
     // If the participant already joined this room before reloading, wait for room doc sync instead of prompting for avatar setup again.
+    if (!ggSession.roomCode) {
+      return <LoadingScreen key="connecting" progressive />;
+    }
     if (!ggSession.isHost) {
       if (awaitingHost) {
         return <LoadingScreen message="Waiting for the host to start…" />;
@@ -215,12 +238,12 @@ const GameCoordinator = () => {
         (email && localStorage.getItem(joinedRoomKey(ggSession, email)) === 'true')
       );
       if (ggRejoin !== 'none') {
-        return <LoadingScreen message={alreadyJoined ? "Reconnecting to your room…" : "Connecting to session…"} />;
+        return <LoadingScreen key="connecting" progressive message={alreadyJoined ? "Reconnecting to your room…" : "Loading…"} />;
       }
       return <GgAvatarSetupScreen />;
     }
     // Host: waiting for the GummyGum pre-created room to show up.
-    return <LoadingScreen message="Setting up host room…" />;
+    return <LoadingScreen key="connecting" progressive />;
   }
 
   return (
@@ -258,7 +281,7 @@ const GameShell = () => {
         )}
         <div className="relative flex-1 min-h-0">
         <Routes>
-          <Route path="/" element={<HomeScreen />} />
+          <Route path="/" element={<LoadingScreen progressive />} />
           <Route path="/lobby" element={<LobbyScreen />} />
           <Route path="/submit" element={<SubmitScreen />} />
           <Route path="/submit/wait" element={<SubmitWaitScreen />} />
