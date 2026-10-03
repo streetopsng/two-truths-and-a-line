@@ -23,16 +23,20 @@ export const LeaderboardScreen = () => {
   const isLast = currentRound >= (roundOrder?.length || 1) - 1;
 
   const handleNext = async () => {
-    if (isLast) {
-      await updateGameDoc({ status: 'end' });
-    } else {
-      await updateGameDoc({ 
-        status: 'question',
-        currentRound: currentRound + 1,
-        roundEndTime: Date.now() + 30000,
-        votes: {},
-        revealed: false
-      });
+    try {
+      if (isLast) {
+        await updateGameDoc({ status: 'end' });
+      } else {
+        await updateGameDoc({
+          status: 'question',
+          currentRound: currentRound + 1,
+          roundEndTime: Date.now() + 30000,
+          votes: {},
+          revealed: false
+        });
+      }
+    } catch (err) {
+      console.error('Next round failed:', err);
     }
   };
 

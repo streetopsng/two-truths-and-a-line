@@ -80,7 +80,10 @@ export const QuestionScreen = () => {
 
     if (timeLeft === 0 || allVoted) {
       hasRevealedRef.current = true;
-      handleReveal().catch((err) => console.error('handleReveal failed:', err));
+      handleReveal().catch((err) => {
+        console.error('handleReveal failed:', err);
+        hasRevealedRef.current = false;
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, votes, players, isHost, revealed]);
@@ -89,7 +92,7 @@ export const QuestionScreen = () => {
     if (revealed || isMe || isHost) return;
     await updateGameDoc({
       [`votes.${currentUser.uid}`]: idx
-    });
+    }).catch((err) => console.error('Vote failed:', err));
   };
 
   const handleReveal = async () => {

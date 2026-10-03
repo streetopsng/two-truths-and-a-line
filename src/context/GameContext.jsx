@@ -59,6 +59,9 @@ const IN_GAME_STATUSES = ["question", "reaction", "leaderboard"];
 // 'ended' = host ended from inside the experience; 'Ended' = GummyGum dashboard force-end.
 const ENDED_STATUSES = ["ended", "Ended", "cancelled"];
 const LOBBY_EXPIRY_MS = 20 * 60 * 1000;
+const WRITE_ATTEMPTS = 5;
+const RETRY_DELAY_MS = 1000;
+const phaseOf = (g) => `${g?.status}|${g?.currentRound}|${g?.revealed}`;
 
 const isClosedRoom = (data, now = Date.now()) => {
   if (data.status === "expired" || data.status === "end" || ENDED_STATUSES.includes(data.status)) return true;
@@ -100,6 +103,9 @@ export const GameProvider = ({ children }) => {
   const hostExitInProgressRef = useRef(false);
   // Set when the hub ended the session; the room doc itself never changes, so snapshots must not undo it.
   const hubEndedRef = useRef(false);
+  const ggSessionRef = useRef(null);
+  ggSessionRef.current = ggSession;
+  const [syncError, setSyncError] = useState(false);
 
   // 0. Resolve GummyGum hub launch identity (?ggt=...), if present.
   useEffect(() => {
@@ -293,6 +299,30 @@ export const GameProvider = ({ children }) => {
 
   const latestStatusRef = useRef(null);
   latestStatusRef.current = gameState.status;
+  const latestGameRef = useRef(gameState);
+  latestGameRef.current = gameState;
+
+  // A failed write must not freeze the round, so it is retried; once the game has moved on a late retry is dropped.
+  const writeGame = async (data) => {
+    const gameRef = doc(db, "games", gameCode);
+    const startPhase = phaseOf(latestGameRef.current);
+    let lastError = null;
+    for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
+      if (attempt > 0 && phaseOf(latestGameRef.current) !== startPhase) return;
+      try {
+        await updateDoc(gameRef, data);
+        setSyncError(false);
+        return;
+      } catch (err) {
+        lastError = err;
+        console.error(`Game write failed (attempt ${attempt + 1}):`, err);
+        if (err?.code === "permission-denied" || err?.code === "not-found") break;
+        if (attempt < WRITE_ATTEMPTS - 1) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      }
+    }
+    setSyncError(true);
+    throw lastError;
+  };
 
   // One-time abandonment check, run before this client's heartbeat starts so
   // a returning client can't mask a room nobody has touched for hours.
@@ -318,8 +348,9 @@ export const GameProvider = ({ children }) => {
           return;
         }
 
+        // Host only: every player writing the game doc made every other device re-read it each minute.
         const beat = () => {
-          if (hostExitInProgressRef.current) return;
+          if (hostExitInProgressRef.current || !ggSessionRef.current?.isHost) return;
           if (IN_GAME_STATUSES.includes(latestStatusRef.current)) {
             updateDoc(gameRef, { lastActivity: Date.now() }).catch(() => {});
           }
@@ -694,7 +725,17 @@ export const GameProvider = ({ children }) => {
 
     if (staleEntry) {
       const [staleUid, stalePlayer] = staleEntry;
+      // Rounds and votes are keyed by uid; left on the old uid, this player's rounds would render blank for everyone.
+      const moved = {};
+      if (Array.isArray(data.roundOrder) && data.roundOrder.some((e) => e.uid === staleUid)) {
+        moved.roundOrder = data.roundOrder.map((e) => (e.uid === staleUid ? { ...e, uid: user.uid } : e));
+      }
+      if (data.votes && data.votes[staleUid] !== undefined) {
+        moved[`votes.${user.uid}`] = data.votes[staleUid];
+        moved[`votes.${staleUid}`] = deleteField();
+      }
       await updateDoc(gameRef, {
+        ...moved,
         [`players.${user.uid}`]: {
           ...stalePlayer,
           name: playerName || stalePlayer.name,
@@ -815,12 +856,7 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
-    try {
-      await updateDoc(doc(db, "games", gameCode), updates);
-    } catch (err) {
-      console.error("startGame failed — updateDoc threw:", err);
-      throw err;
-    }
+    await writeGame(updates);
   };
 
   const submitStatements = async (setsOrStatements, maybeLieIndex) => {
@@ -856,12 +892,7 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
-    try {
-      await updateDoc(doc(db, "games", gameCode), updates);
-    } catch (err) {
-      console.error("submitStatements failed:", err);
-      throw err;
-    }
+    await writeGame(updates);
   };
 
   const advanceGame = async (status, extraData = {}) => {
@@ -883,7 +914,7 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
-    await updateDoc(doc(db, "games", gameCode), updates);
+    await writeGame(updates);
   };
 
   const updateGameDoc = async (data) => {
@@ -902,12 +933,7 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
-    try {
-      await updateDoc(doc(db, "games", gameCode), data);
-    } catch (err) {
-      console.error("updateGameDoc failed:", err);
-      throw err;
-    }
+    await writeGame(data);
   };
 
   // Host-only exit: notify participants via the room doc, then close the hub session, then leave.
@@ -960,6 +986,8 @@ export const GameProvider = ({ children }) => {
         awaitingHost,
         ggRejoin,
         isSessionExpired,
+        syncError,
+        setSyncError,
         setIsSessionExpired,
         setGameCode,
         createGame,

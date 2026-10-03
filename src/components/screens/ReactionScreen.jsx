@@ -28,7 +28,7 @@ export const ReactionScreen = () => {
   useEffect(() => {
     if (isHost && subject?.lastReaction) {
       const timer = setTimeout(() => {
-        updateGameDoc({ status: 'leaderboard' });
+        updateGameDoc({ status: 'leaderboard' }).catch((err) => console.error('Advance to leaderboard failed:', err));
       }, 1500);
       return () => clearTimeout(timer);
     }
@@ -38,11 +38,14 @@ export const ReactionScreen = () => {
     setPicked(emoji);
     await updateGameDoc({
       [`players.${currentUser.uid}.lastReaction`]: emoji
+    }).catch((err) => {
+      console.error('Reaction failed:', err);
+      setPicked(null);
     });
   };
 
   const skipReaction = () => {
-    if (isHost) updateGameDoc({ status: 'leaderboard' });
+    if (isHost) updateGameDoc({ status: 'leaderboard' }).catch((err) => console.error('Skip reaction failed:', err));
   };
 
   const reactions = [

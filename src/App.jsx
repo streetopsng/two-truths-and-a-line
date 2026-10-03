@@ -192,6 +192,7 @@ const GummyGumCancelledScreen = ({ completed }) => {
 const GameCoordinator = () => {
   const { gameState, ggSession, ggChecked, awaitingHost, ggRejoin, createGame, isSessionExpired, setIsSessionExpired, setGameCode } = useGame();
   const routedRef = React.useRef(false);
+  const [launchFailed, setLaunchFailed] = useState(false);
 
   // Hosts spectate and never get a `players` entry, so they skip straight
   // into their pre-created room — no avatar to pick. Non-host participants
@@ -203,7 +204,19 @@ const GameCoordinator = () => {
     setIsSessionExpired(false);
     setGameCode(ggSession.roomCode);
     const name = ggSession.player?.name || 'Guest';
-    createGame(name, ggSession.roomCode).catch((err) => console.error('GummyGum auto-create failed', err));
+    // createGame adopts the room if an earlier attempt already made it, so retrying is safe.
+    (async () => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          await createGame(name, ggSession.roomCode);
+          return;
+        } catch (err) {
+          console.error('GummyGum auto-create failed', err);
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      }
+      setLaunchFailed(true);
+    })();
   }, [ggSession, createGame, setIsSessionExpired, setGameCode]);
 
   if (!ggChecked) {
@@ -242,6 +255,9 @@ const GameCoordinator = () => {
       }
       return <GgAvatarSetupScreen />;
     }
+    if (launchFailed) {
+      return <LoadingScreen key="launch-failed" message="We couldn't set up your room. Check your connection and reload this page." />;
+    }
     // Host: waiting for the GummyGum pre-created room to show up.
     return <LoadingScreen key="connecting" progressive />;
   }
@@ -262,7 +278,7 @@ const HOST_BAR_ROUTES = ['/round', '/round/reaction', '/round/scores'];
 
 const GameShell = () => {
   const location = useLocation();
-  const { ggSession } = useGame();
+  const { ggSession, syncError, setSyncError } = useGame();
   const showHostBar = ggSession?.isHost && HOST_BAR_ROUTES.includes(location.pathname);
 
   return (
@@ -293,6 +309,16 @@ const GameShell = () => {
         </Routes>
         </div>
       </div>
+      {syncError && (
+        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md flex items-start gap-3 px-4 py-3 rounded-[12px] bg-[#1A1A1A] text-white text-[13px] font-semibold shadow-lg">
+          <span className="flex-1">
+            {ggSession?.isHost
+              ? "Couldn't reach the game server, so the game hasn't moved on. Check your connection, then try again or reload this page."
+              : "That didn't send. Check your connection and try again."}
+          </span>
+          <button type="button" onClick={() => setSyncError(false)} aria-label="Dismiss" className="text-white/70 hover:text-white cursor-pointer">✕</button>
+        </div>
+      )}
     </div>
   );
 };
